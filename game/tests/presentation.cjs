@@ -78,42 +78,40 @@ async function checkProgress({ down, move, up, snapshot }) {
   assert.ok(filled(next.pixel(230, 56)), 'Completing extraction advances the overall progress strip');
 }
 
-function guideNear(image, x, y, radius) {
-  let count = 0;
-  for (let dy = -radius; dy <= radius; dy += 3) {
-    for (let dx = -radius; dx <= radius; dx += 3) {
-      const [r, g, b] = image.pixel(x + dx, y + dy);
-      if (r > 240 && g > 210 && b > 164) count++;
-    }
+function visibleArc(before, after, x, y, radius) {
+  let samples = 0;
+  for (let i = 0; i < 120; i++) {
+    const angle = i * Math.PI / 60;
+    const px = x + radius * Math.cos(angle);
+    const py = y + radius * Math.sin(angle);
+    const [r, g, b] = after.pixel(px, py);
+    const [oldR, oldG, oldB] = before.pixel(px, py);
+    if (r >= oldR && g - oldG > 19 && b - oldB > 13) samples++;
   }
-  return count;
-}
-
-async function untilVisible(snapshot, visible, message) {
-  const deadline = Date.now() + 4400;
-  do {
-    if (visible(await snapshot())) return;
-    await wait(65);
-  } while (Date.now() < deadline);
-  assert.fail(message);
+  return samples / 120;
 }
 
 async function checkGuidance({ down, move, up, snapshot }) {
+  const start = await snapshot();
   await down(320, 888);
   await up();
-  await untilVisible(snapshot, image => guideNear(image, 296, 650, 32) > 5,
-    'The first-use demonstration moves upward from the extractor toward the portrait');
-  await snapshot('portrait-first-drag');
+  await wait(700);
+  const ready = await snapshot('portrait-extraction-guides');
+  for (const [x, y] of blemishes.slice(0, 2)) {
+    const arc = visibleArc(start, ready, x, y, 16);
+    assert.ok(arc > 0.22 && arc < 0.79, `A thin dashed guide marks the blemish at ${x}, ${y} (${arc})`);
+    assert.ok(visibleArc(start, ready, x, y, 12) < 0.08, 'The guide leaves the blemish visible');
+  }
+  await wait(2000);
+  const idle = await snapshot();
+  assert.equal(changedNear(ready, idle, 257, 232, 20), 0, 'The target stays marked while the player waits');
   await down(320, 828);
   await move(229, 256);
   await up();
-  await wait(450);
-  const justTreated = await snapshot();
-  assert.ok(guideNear(justTreated, 346, 259, 24) < 5, 'Successful work gives the player space');
-  await untilVisible(snapshot, image => guideNear(image, 346, 259, 24) > 5,
-    'After a stall the hint appears by a remaining pimple');
-  const hint = await snapshot('portrait-next-target');
-  assert.ok(guideNear(hint, 257, 232, 24) < 5, 'The hint leaves the finished pimple alone');
+  await wait(350);
+  const treated = await snapshot('portrait-one-target-treated');
+  assert.ok(visibleArc(start, treated, 257, 232, 16) < 0.15, 'The finished target loses its guide');
+  assert.equal(changedNear(ready, treated, 346, 259, 18), 0, 'The other target stays marked');
 }
 
 function colorDistance(a, b) {
@@ -151,7 +149,7 @@ async function checkViewport({ down, move, up, snapshot, stage, viewport }) {
   await wait(330);
   const held = await snapshot(name + '-held');
   assert.ok(changedNear(ready, held, 257, 232, 12) > 10, 'The working tip treats the targeted blemish');
-  assert.equal(changedNear(ready, held, 346, 259, 12), 0, 'The other blemish stays intact');
+  assert.equal(changedNear(ready, held, 346, 259, 8), 0, 'The other blemish stays intact');
   await up();
   await wait(350);
   const returned = await snapshot(name + '-tool-returned');

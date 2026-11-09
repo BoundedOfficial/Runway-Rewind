@@ -2,6 +2,7 @@ local platform = require "platform.platform"
 local artwork = require "portrait.artwork"
 local runner = require "treatments.runner"
 local sequence = require "treatments.level_one"
+local target_guidance = require "main.target_guidance"
 
 local POINTER = hash("pointer")
 local INK = vmath.vector4(0.26, 0.13, 0.16, 1)
@@ -38,15 +39,12 @@ local function treatment_hud()
         steps[i] = step
     end
     gui.set_enabled(background, false)
-    local ring = gui.new_pie_node(vmath.vector3(), vmath.vector3(42, 42, 0))
-    gui.set_outer_bounds(ring, gui.PIEBOUNDS_ELLIPSE)
-    gui.set_inner_radius(ring, 17)
-    gui.set_perimeter_vertices(ring, 36)
-    gui.set_color(ring, vmath.vector4(1, 0.96, 0.87, 1))
     local instruction = text(320, 200, "Drag the tool", IVORY)
-    gui.set_enabled(ring, false)
     gui.set_enabled(instruction, false)
-    return { background = background, label = label, steps = steps, ring = ring, instruction = instruction }
+    return {
+        background = background, label = label, steps = steps,
+        guides = target_guidance.create(sequence), instruction = instruction,
+    }
 end
 
 local function starting_treatment()
@@ -74,7 +72,7 @@ local function reset_stage(self)
     platform.save_run(0)
     show_screen(self, "start")
     gui.set_enabled(self.hud.background, false)
-    gui.set_enabled(self.hud.ring, false)
+    target_guidance.clear(self.hud.guides)
     gui.set_enabled(self.hud.instruction, false)
     gui.set_enabled(self.tool, false)
     msg.post("@render:", "reset_portrait", { completed = {} })

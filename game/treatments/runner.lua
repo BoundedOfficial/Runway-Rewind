@@ -1,4 +1,5 @@
 local artwork = require "portrait.artwork"
+local target_guidance = require "main.target_guidance"
 
 local M = {}
 local RENDER = "@render:"
@@ -12,7 +13,6 @@ local DEFAULT_CAMERA = vmath.vector3(CENTER_X, CENTER_Y, 1)
 local STEP_PAST = vmath.vector4(0.82, 0.61, 0.50, 1)
 local STEP_CURRENT = vmath.vector4(1, 0.80, 0.58, 1)
 local STEP_PENDING = vmath.vector4(0.43, 0.31, 0.28, 1)
-local HINT_DELAY, HINT_LENGTH = 2.4, 1.25
 
 local function ease(t)
     return t * t * (3 - 2 * t)
@@ -43,20 +43,15 @@ local function frame_during_transition(self, camera)
 end
 
 local function clear_guidance(self)
-    gui.set_enabled(self.hud.ring, false)
+    target_guidance.clear(self.hud.guides)
     gui.set_enabled(self.hud.instruction, false)
-end
-
-local function reset_guidance(self)
-    self.idle, self.hint = 0, nil
-    clear_guidance(self)
 end
 
 local function begin(self, index)
     self.index = index
     local treatment = self.sequence[index]
     self.treatment = treatment
-    reset_guidance(self)
+    clear_guidance(self)
     if not treatment then
         self.state = "finished"
         gui.set_enabled(self.tool_node, false)
@@ -112,7 +107,6 @@ local function paint(self, ax, ay, bx, by)
     local span = dx * dx + dy * dy
     local radius = self.treatment.radius
     local core_squared = (0.65 * radius) ^ 2
-    local advanced = false
     for index, region in ipairs(self.regions) do
         if not region.settle then
             local touched = false
@@ -124,7 +118,6 @@ local function paint(self, ax, ay, bx, by)
                     if not region.hit[i] then
                         region.hit[i] = true
                         region.count = region.count + 1
-                        advanced = true
                     end
                 end
             end
@@ -132,11 +125,11 @@ local function paint(self, ax, ay, bx, by)
                 msg.post(RENDER, "paint_region", { index = index, ax = ax, ay = ay, bx = bx, by = by, radius = radius })
                 if region.count >= 0.8 * #region.cells then
                     region.settle = 0
+                    target_guidance.complete(self.hud.guides, index)
                 end
             end
         end
     end
-    if advanced then reset_guidance(self) end
 end
 
 local function extract(self, x, y)
@@ -146,68 +139,17 @@ local function extract(self, x, y)
         local anchor = artwork.regions[id].anchor
         local squared = (x - anchor[1]) ^ 2 + (y - anchor[2]) ^ 2
         if squared < distance then
-            nearest, distance = self.regions[index], squared
+            nearest, distance = index, squared
         end
     end
-    if nearest and not nearest.settle then
-        nearest.settle = 0
-        reset_guidance(self)
+    if nearest and not self.regions[nearest].settle then
+        self.regions[nearest].settle = 0
+        target_guidance.complete(self.hud.guides, nearest)
     end
 end
 
 local function portrait_point(camera, x, y)
     return camera.x + (x - CENTER_X) / camera.z, camera.y + (y - CENTER_Y) / camera.z
-end
-
-local function remaining_target(self)
-    for index, region in ipairs(self.regions) do
-        if not region.settle then
-            if self.treatment.target_radius then
-                return artwork.regions[self.treatment.regions[index]].anchor
-            end
-            local x, y = 0, 0
-            for i, cell in ipairs(region.cells) do
-                if not region.hit[i] then x, y = x + cell[1], y + cell[2] end
-            end
-            local remaining = #region.cells - region.count
-            x, y = x / remaining, y / remaining
-            local closest, distance = nil, math.huge
-            for i, cell in ipairs(region.cells) do
-                if not region.hit[i] then
-                    local squared = (cell[1] - x) ^ 2 + (cell[2] - y) ^ 2
-                    if squared < distance then closest, distance = cell, squared end
-                end
-            end
-            return closest
-        end
-    end
-end
-
-local function guide(self, dt)
-    self.idle = self.idle + dt
-    local teaching = self.demonstrate
-    local delay = teaching and 0.18 or HINT_DELAY
-    local length = teaching and 1.5 or HINT_LENGTH
-    if self.idle < delay then return end
-    local t = (self.idle - delay) / length
-    if t >= 1 then
-        reset_guidance(self)
-        return
-    end
-    self.hint = self.hint or remaining_target(self)
-    if not self.hint then return end
-    local camera = self.camera
-    local x = CENTER_X + (self.hint[1] - camera.x) * camera.z
-    local y = CENTER_Y + (self.hint[2] - camera.y) * camera.z
-    if teaching then
-        local travel = ease(math.min(1, t * 1.25))
-        x, y = REST.x + (x - REST.x) * travel, REST.y + (y - REST.y) * travel
-    end
-    local ring = self.hud.ring
-    gui.set_position(ring, vmath.vector3(x, artwork.height - y, 0))
-    gui.set_alpha(ring, math.min(1, t * 7, (1 - t) * 5))
-    gui.set_enabled(ring, not self.tip_x or (self.tip_x - x) ^ 2 + (self.tip_y - y) ^ 2 > 38 ^ 2)
-    gui.set_enabled(self.hud.instruction, teaching)
 end
 
 local function aim(self, x, y)
@@ -221,6 +163,7 @@ local function aim(self, x, y)
         paint(self, ax, ay, bx, by)
     end
     self.tip_x, self.tip_y = tip_x, tip_y
+    target_guidance.aim(self.hud.guides, tip_x, tip_y)
 end
 
 local function held_pose(self)
@@ -239,7 +182,7 @@ function M.cancel(self, pointer_lost)
     self.tip_x, self.tip_y = nil, nil
     if self.state == "held" then
         animate(self, "returning", REST)
-        clear_guidance(self)
+        target_guidance.release(self.hud.guides)
     end
 end
 
@@ -253,8 +196,9 @@ function M.input(self, x, y, pressed, released, pointer_button)
             self.state, self.elapsed = "held", 0
             if self.demonstrate then
                 self.demonstrate = false
-                reset_guidance(self)
+                gui.set_enabled(self.hud.instruction, false)
             end
+            target_guidance.hold(self.hud.guides)
             aim(self, x, y)
             held_pose(self)
         end
@@ -289,7 +233,6 @@ function M.update(self, dt)
         return self.treatment.id
     end
 
-    if state == "ready" or state == "held" then guide(self, dt) end
     if state == "ready" then return end
     self.elapsed = self.elapsed + dt
     if state == "held" then
@@ -315,6 +258,10 @@ function M.update(self, dt)
         return nil, self.state == "finished"
     else
         self.state = "ready"
+        if state == "entering" then
+            target_guidance.show(self.hud.guides, self.treatment, self.camera)
+            gui.set_enabled(self.hud.instruction, self.demonstrate)
+        end
     end
 end
 

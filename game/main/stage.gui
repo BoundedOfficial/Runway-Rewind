@@ -7,5 +7,9 @@ textures {
   name: "tools"
   texture: "/assets/generated/tools.atlas"
 }
+materials {
+  name: "target_guide"
+  material: "/main/target_guide.material"
+}
 material: "/builtins/materials/gui.material"
-max_nodes: 32
+max_nodes: 48
