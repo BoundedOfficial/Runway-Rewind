@@ -1,10 +1,10 @@
 param(
     [ValidateSet('debug', 'release')]
     [string]$Variant = 'debug',
-    [ValidateSet('makeup')]
-    [string]$Fixture,
     [string]$Toolchain = (Join-Path $PSScriptRoot '../../.scratch/toolchain'),
-    [string]$BundleOutput = (Join-Path $PSScriptRoot '../../.scratch/html5')
+    [string]$BundleOutput = (Join-Path $PSScriptRoot '../../.scratch/html5'),
+    [ValidateSet('makeup')]
+    [string]$Fixture
 )
 
 $ErrorActionPreference = 'Stop'
