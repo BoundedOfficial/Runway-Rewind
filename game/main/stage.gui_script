@@ -103,8 +103,7 @@ function on_input(self, action_id, action)
             self.started = true
             gui.set_enabled(self.prompt, false)
             gui.set_enabled(self.label, true)
-            -- Focused entry starts with the preceding extraction treatment settled.
-            self.runner = runner.start(cleansing, self.label, self.tool, { completed = artwork.extraction })
+            self.runner = runner.start(cleansing, self.label, self.tool, { completed = {} })
             msg.post(".", MAKEOVER_STARTED)
             return true
         end

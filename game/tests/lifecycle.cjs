@@ -146,17 +146,15 @@ async function checkHeldStroke(browser, url, touch, development) {
     await down(320, 888);
     await up();
     await wait(550);
-    if (!process.env.LIFECYCLE_CREAM_ENTRY) {
-      // Settle the preceding extraction treatment through the visible pimple locations.
-      await down(320, 828);
-      for (const [x, y] of [[257, 232], [346, 259], [389, 270], [249, 286], [219, 444],
-        [351, 416], [431, 418], [420, 432], [383, 453], [418, 493], [246, 531],
-        [406, 528], [291, 574], [343, 572]]) {
-        await move(x - 28, y + 24);
-      }
-      await up();
-      await wait(1150);
+    // Settle the preceding extraction treatment through the visible pimple locations.
+    await down(320, 828);
+    for (const [x, y] of [[257, 232], [346, 259], [389, 270], [249, 286], [219, 444],
+      [351, 416], [431, 418], [420, 432], [383, 453], [418, 493], [246, 531],
+      [406, 528], [291, 574], [343, 572]]) {
+      await move(x - 28, y + 24);
     }
+    await up();
+    await wait(1150);
     const leftBefore = await frame(page, leftCheek);
     const rightBefore = await frame(page, rightCheek);
     await down(320, 828);
