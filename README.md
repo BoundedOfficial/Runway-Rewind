@@ -1,16 +1,10 @@
 # Runway Rewind
 
-A dress-up game by BoundedOfficial.
+The project will be rebuilt in Defold. Versioned browser playables are retained as references in [.prototype](.prototype/README.md).
 
-## Status
+- [Play Level 1 / v1](<.prototype/Level 1/v1/index.html>)
+- [Prototype instructions](<.prototype/Level 1/v1/README.md>)
+- [Defold handoff](<.prototype/Level 1/v1/docs/DEFOLD-HANDOFF.md>)
+- [Reusable layer-processing tools](tools/layers/README.md)
 
-Early development. This repository will contain the game's source code, assets, and project documentation.
-
-## Getting started
-
-```sh
-git clone https://github.com/BoundedOfficial/Runway-Rewind.git
-cd Runway-Rewind
-```
-
-Build and play instructions will be added as development begins.
+The Defold project structure and additional tooling will be introduced as needed.

@@ -1,0 +1,39 @@
+﻿layer,source_role,generated_plate,x,y,width,height,artwork,mask,coverage_samples,sha256
+extract-0,Mu / Lo choc mun,03-extracted,234,206,46,55,layers/extract-0.png,layers/extract-0.mask.png,18,efc45e6d714ebd46cdbf9ca7f1c007c46fda034b28501c21f620ddbac8b4a731
+extract-1,Mu / Lo choc mun,03-extracted,323,233,46,55,layers/extract-1.png,layers/extract-1.mask.png,20,3548a71b7e390587f7bf913f1a9582a5301f7d8ad713105df7ce915f15ef416a
+extract-2,Mu / Lo choc mun,03-extracted,368,246,42,52,layers/extract-2.png,layers/extract-2.mask.png,12,e89dbca09c5f614ad687772894bd972b326ee03acf28ca4f6ce986ab02f10c0a
+extract-3,Mu / Lo choc mun,03-extracted,227,261,44,54,layers/extract-3.png,layers/extract-3.mask.png,16,2c161b2a8015032bd33eb1d4da7b8b9e53b5d02a59aa8eaac13453e963bb74fa
+extract-4,Mu / Lo choc mun,03-extracted,196,418,46,55,layers/extract-4.png,layers/extract-4.mask.png,17,883eff438681fade36355f411a3016e9ed12bba1ed1e020edca45eea807bb3fc
+extract-5,Mu / Lo choc mun,03-extracted,330,392,42,52,layers/extract-5.png,layers/extract-5.mask.png,12,64e3d819fb166d560347a86e3adb9b50628d18e405f7c366210a9c6050c38e2b
+extract-6,Mu / Lo choc mun,03-extracted,409,393,44,54,layers/extract-6.png,layers/extract-6.mask.png,15,cac537dfc3c22a4d372b00936fe1975d945006a1c075f4a8750b81ca8206f4ce
+extract-7,Mu / Lo choc mun,03-extracted,399,408,42,52,layers/extract-7.png,layers/extract-7.mask.png,13,d06ec426c54502e3a65f88c045960326bbe906bbe519c086967e2f61d4e4f26f
+extract-8,Mu / Lo choc mun,03-extracted,361,428,44,54,layers/extract-8.png,layers/extract-8.mask.png,16,b34721d10b67a664f474ed541d8e6169dbc88d6c034fd2bad518e72634484a55
+extract-9,Mu / Lo choc mun,03-extracted,396,468,44,54,layers/extract-9.png,layers/extract-9.mask.png,16,948afb32287946df0adaec1d34f199309ca9edda5c3d2973bfd45449aabd9aa0
+extract-10,Mu / Lo choc mun,03-extracted,224,506,44,54,layers/extract-10.png,layers/extract-10.mask.png,14,bf32d0c8210ad12173e061e3a53ae961735a7e3a7bf73e0e2c8691749daae4e1
+extract-11,Mu / Lo choc mun,03-extracted,385,504,42,52,layers/extract-11.png,layers/extract-11.mask.png,15,801d660f49362f088e2bcb4f06e40d74759884aadbaa3d625ef5a80696aaab99
+extract-12,Mu / Lo choc mun,03-extracted,269,549,44,54,layers/extract-12.png,layers/extract-12.mask.png,16,955501fad1b3aeb8fcf31e1850fa1d2056dadb75922e5d8163f69f72f07a97e8
+extract-13,Mu / Lo choc mun,03-extracted,320,546,46,55,layers/extract-13.png,layers/extract-13.mask.png,17,b9e1b3a805cd822c63c6be00a46007dc2332ed7eaf460adf5366974c62167480
+cream-forehead,Kem / Kem_1 / Vet kem duong,04-cream,172,189,296,163,layers/cream-forehead.png,layers/cream-forehead.mask.png,709,2fba40b7678e0bb550ab3e5dcadcd90c716cdddeb769842332faec6c4aafef48
+clean-forehead,Base khuyet diem / Base_Mun / Base_Tan nhang,01-clean,126,145,388,249,layers/clean-forehead.png,layers/clean-forehead.mask.png,1495,bb3178bcfb828b661f51d3e8930e2862586206f8b8110a6d41a316648a2ecfd5
+cream-left,Kem / Kem_1 / Vet kem duong,04-cream,168,342,157,262,layers/cream-left.png,layers/cream-left.mask.png,519,77b12754dfd970bcaa0459c8a5188e69150b7e78c81e263664bf3e6e6d9d9147
+clean-left,Base khuyet diem / Base_Mun / Base_Tan nhang,01-clean,123,296,244,532,layers/clean-left.png,layers/clean-left.mask.png,1884,0a030f814a43f08422af0a73d01cbc7046f3d1534de6bc8195559066f508b20a
+cream-right,Kem / Kem_1 / Vet kem duong,04-cream,315,342,157,262,layers/cream-right.png,layers/cream-right.mask.png,509,53c14b0d769473f39bab801831ab934f5205c667fbb926f3de75ed5964200ff5
+clean-right,Base khuyet diem / Base_Mun / Base_Tan nhang,01-clean,273,296,244,532,layers/clean-right.png,layers/clean-right.mask.png,1863,6e9cb21ac0cfc9f22cd6baf9ef472cb6aa7c37d502bc1500108a8ecb7b4f1d20
+brow-clean-L,Base_Long may truoc khi sua,12-groomed-brows,180,291,133,61,layers/brow-clean-L.png,layers/brow-clean-L.mask.png,103,81eb82ddb70da4e0e3ac67bbef5eea3d07b4bb5b6b2e8061a63f321fffe7de6a
+brow-L,Long may dam,14-glamour-hair-down,168,279,158,86,layers/brow-L.png,layers/brow-L.mask.png,217,49de5cc62a06f65088b947de695e975cc8100a479c969cc05eff2018dc06808f
+brow-clean-R,Base_Long may truoc khi sua,12-groomed-brows,327,291,133,61,layers/brow-clean-R.png,layers/brow-clean-R.mask.png,106,fad34a56396d9343d78532c6d828eb9bb8de9548e3655bfa85cc6f84190f734f
+brow-R,Long may dam,14-glamour-hair-down,314,279,158,86,layers/brow-R.png,layers/brow-R.mask.png,219,f46ce331e7c521c146f81ec350be011328e6f1e902f8ab9f44589885e8780513
+scrub,Lop bot tay da chet,05-lip-scrub,248,486,144,67,layers/scrub.png,layers/scrub.mask.png,168,270e1ebb76f7528404437f77ec48595c7867d813bd4a7b881ebe04023092d0ea
+hydrated-lips,Moi tham nuoc / Base_Moi chua duong,01-clean,222,461,196,117,layers/hydrated-lips.png,layers/hydrated-lips.mask.png,371,7cf4ab699f334146da974d04a91f2c55237bdcd0414a30fdfe1cfb2c403cf1ad
+foundation,Face_danh phan,13-foundation-hair-down,121,143,398,667,layers/foundation.png,layers/foundation.mask.png,3742,54141097eb70159bbb3337e5bf26e9cd5ab5cc9bb01d0e59c902c817c2444d24
+eye-look-L,Phan mat / Phan duoi mat / Lop kim tuyen / mascara (combined),14-glamour-hair-down,166,321,154,110,layers/eye-look-L.png,layers/eye-look-L.mask.png,283,7b4a6d4c17dad4ef8c76c3d5e45db20b0647870015649db04e352ffec001794c
+eye-look-R,Phan mat / Phan duoi mat / Lop kim tuyen / mascara (combined),14-glamour-hair-down,320,321,154,110,layers/eye-look-R.png,layers/eye-look-R.mask.png,278,f0d18fc84b37dd8d84840b31f27a3ff12c43a2bb0c785024ea19f0c2f8a06c80
+contour-L,Khoi mui,14-glamour-hair-down,271,380,54,102,layers/contour-L.png,layers/contour-L.mask.png,51,4cdfe2777e14898e9ef9e32cb8691201b80def9fce3fdf46f47f33b4a87613b5
+contour-R,Khoi mui,14-glamour-hair-down,315,380,54,102,layers/contour-R.png,layers/contour-R.mask.png,54,793fdb301cc9a2a5c1ca74d26fdb8a8716688b16e825687dafd974b91f8a4b10
+blush-L,Ma hong,14-glamour-hair-down,175,389,108,90,layers/blush-L.png,layers/blush-L.mask.png,126,eb3fb5f3d734da79ce4fb203162667efe9caaa520f0a491242f23637a7f4924e
+blush-R,Ma hong,14-glamour-hair-down,357,389,108,90,layers/blush-R.png,layers/blush-R.mask.png,124,d8dabc71158affa624f13ad3af7a176bbea40f839e12acd7919c28d6dd9aa3f5
+lipstick,Son moi,14-glamour-hair-down,243,481,153,76,layers/lipstick.png,layers/lipstick.mask.png,153,9568d5ecfd984ed707388dc09c4e58e6c14f68a5d0989bc88419d3b51835987b
+robe-L,Original robe cleanup,15-clean-robe,0,623,344,337,layers/robe-L.png,layers/robe-L.mask.png,2249,35bb00efdc4257ce244392b56cebcf439f8a529f22393e85139ecf7e3c1b7fc1
+robe-R,Original robe cleanup,15-clean-robe,296,628,344,332,layers/robe-R.png,layers/robe-R.mask.png,2221,7addd5e2959cb6584011f5ccd1b80bfc56c30640567842a4416b0bcfb7202469
+style-L,Hair-only styling,16-hair-only,0,0,354,960,layers/style-L.png,layers/style-L.mask.png,790,57fcd7a8b82be4462bf8915c06ece2d9b3fc16cc3b5e623c54151f693f88a77f
+style-R,Hair-only styling,16-hair-only,286,0,354,890,layers/style-R.png,layers/style-R.mask.png,793,64441ccc1c6b845f5c05e9d44af6d27b52fb01d1cd3f2cc952a099ecd03c5754
