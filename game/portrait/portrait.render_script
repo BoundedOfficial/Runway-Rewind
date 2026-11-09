@@ -8,6 +8,14 @@ local IDENTITY = vmath.matrix4()
 local FULL_X = vmath.vector4(0, 0, 1, 0)
 local FULL_Y = vmath.vector4(0, 1, 0, 0)
 local DEFAULT_CAMERA = vmath.vector3(WIDTH / 2, HEIGHT / 2, 1)
+local NATURAL_COLOR = vmath.vector4(1, 1, 1, 0)
+-- RGB scales the authored color. W enables diffuse cheek falloff.
+local BLUSH_COLOR = vmath.vector4(1, 0.875, 0.985, 1)
+local CONTOUR_COLOR = vmath.vector4(0.95, 0.89, 0.94, 0)
+local LAYER_COLORS = {
+    ["blush-L"] = BLUSH_COLOR, ["blush-R"] = BLUSH_COLOR,
+    ["contour-L"] = CONTOUR_COLOR, ["contour-R"] = CONTOUR_COLOR,
+}
 
 local function target(width, height)
     return render.render_target({
@@ -64,7 +72,7 @@ local function load_atlas(self, path)
             rect = vmath.vector4(region.x, HEIGHT - region.y - region.height, region.width, region.height)
         end
         local basis_x, basis_y = atlas_basis(atlas.geometries[animation.frames[1]], texture)
-        self.layers[id] = { rect = rect, basis_x = basis_x, basis_y = basis_y }
+        self.layers[id] = { rect = rect, basis_x = basis_x, basis_y = basis_y, color = LAYER_COLORS[id] }
     end
 end
 
@@ -73,6 +81,7 @@ local function draw_layer(self, texture, layer, mask, settle)
     constants.rect = layer.rect
     constants.uv_basis_x, constants.uv_basis_y = layer.basis_x, layer.basis_y
     constants.coverage = vmath.vector4(settle or 1, 0, 0, 0)
+    constants.color_scale = layer.color or NATURAL_COLOR
     render.enable_texture("artwork", texture)
     if mask then render.enable_texture("reveal", mask, COLOR) end
     render.draw(self.quad, { constants = constants })

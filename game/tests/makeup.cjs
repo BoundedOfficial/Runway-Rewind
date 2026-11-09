@@ -35,6 +35,19 @@ function crimson(image, [left, top, right, bottom]) {
   return count;
 }
 
+function meanColorShift(before, after, [left, top, right, bottom], weights) {
+  let sum = 0;
+  for (let y = top; y < bottom; y++) {
+    for (let x = left; x < right; x++) {
+      const offset = (y * before.width + x) * 4;
+      for (const [channel, weight] of weights.entries()) {
+        sum += (after.data[offset + channel] - before.data[offset + channel]) * weight;
+      }
+    }
+  }
+  return sum / ((right - left) * (bottom - top));
+}
+
 async function checkMakeup(browser, url, input, release) {
   const page = release?.page ?? await browser.newPage({
     viewport: { width: 640, height: 960 },
@@ -188,6 +201,12 @@ async function checkMakeup(browser, url, input, release) {
       'The lipstick treatment settles into crimson across the lips');
     assert.equal(changed(eyes, finished, backdrop), 0,
       'The stage returns to the full portrait with the backdrop intact');
+    for (const cheek of [[199, 410, 265, 460], [375, 410, 436, 460]]) {
+      assert.ok(meanColorShift(eyes, finished, cheek, [1, -1]) > 14,
+        'The settled blush leaves a clearly visible rose tone on each cheek');
+    }
+    assert.ok(meanColorShift(eyes, finished, [288, 398, 350, 465], [0.25, 0.5, 0.25]) < -4,
+      'The settled contour leaves visible shading around the nose');
     await milestone(12);
     assert.deepEqual(errors, []);
   } finally {
