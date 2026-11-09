@@ -35,6 +35,8 @@ The standalone preview uses the unmodified SDK. The target archives bundle a sep
 
 ## Platform packages
 
+**Release workflow correction:** delivery goes through Playgama, including distribution to YouTube. The separate platform-forced ZIPs described below are compatibility-test artifacts from the earlier implementation, not two required publishing handoffs. A distribution handoff must let Bridge select the host platform rather than force either adapter. The existing packaging script still generates those test artifacts.
+
 Run from the checkout you intend to package. Setup is shared with the preview.
 In a linked worktree, supply the main checkout's `.scratch/toolchain` to
 `-Toolchain` and its `.scratch/releases` to `-ReleaseOutput` to keep the
@@ -162,9 +164,10 @@ node game/tests/finish.cjs ".scratch/finish/Runway Rewind"
 An optional `camera` on a treatment sets the scale and center in the artwork's
 top-left coordinates. Framing eases during tool arrival. The runner maps the
 tool's stage-space tip back to portrait space for treatment coverage.
-The first extraction demonstrates a drag from the tool to a target. After a
-stall, the runner briefly marks the first unfinished region using an untouched
-sample or pimple anchor in the current framing. New coverage clears the hint
-and restarts its idle delay.
+Unfinished regions use the prototype's thin, warm-yellow dashed markers,
+with small sparkles on non-anchor regions. All targets remain visible at their
+authored positions until individually completed, including under eye/lip
+framing. Picking up the tool emphasizes the markers and shows its working
+radius; releasing hides that cursor without hiding the remaining targets.
 
 `portrait/portrait.render_script` uses a 640-by-960 committed target and cropped reveal targets. Each eligible pointer segment draws an analytic soft brush into the corresponding target. Independent sampled hit cells govern completion, and the remaining region fades in smoothly. The renderer multiplies the already feathered atlas artwork by reveal coverage once and composites it with premultiplied blending. For temporary products such as cream, it retains the pre-product portrait and builds the wipe result on that surface. The wipe reveals the clean result under the brush, and the committed surface switches to it after all regions settle.
