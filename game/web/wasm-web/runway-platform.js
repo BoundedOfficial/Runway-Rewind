@@ -11,6 +11,7 @@ let paused = false;
 let pauseCount = 0;
 let restartCount = 0;
 let pendingResize;
+let activeWaiters = [];
 const RUN_KEY = 'runway-rewind.level-1';
 const INITIAL_LOAD_LIMIT_MS = 1500;
 const STORAGE_RETRY_MS = 2000;
@@ -29,7 +30,12 @@ function updatePause() {
   if (paused === next) return;
   paused = next;
   if (paused) pauseCount++;
-  else driveStorage();
+  else {
+    const waiters = activeWaiters;
+    activeWaiters = [];
+    waiters.forEach(resume => resume());
+    driveStorage();
+  }
   if (!stageStarted) return;
 
   // Defold's bundled Emscripten loop owns both simulation and rendering.
@@ -41,6 +47,10 @@ function updatePause() {
     pendingResize = undefined;
     Module.resumeMainLoop();
   }
+}
+
+function whenActive() {
+  return paused ? new Promise(resolve => activeWaiters.push(resolve)) : Promise.resolve();
 }
 
 function listenForLifecycle() {
@@ -64,29 +74,6 @@ for (const type of ['mousedown', 'mousemove', 'touchstart', 'touchmove']) {
       event.stopImmediatePropagation();
     }
   }, { capture: true });
-}
-
-function showDevelopmentControls() {
-  const controls = document.createElement('div');
-  controls.id = 'development-controls';
-  const pause = document.createElement('button');
-  const restart = document.createElement('button');
-  pause.textContent = 'Pause';
-  restart.textContent = 'Restart makeover';
-  const setDeveloperPause = value => {
-    developerPaused = value;
-    pause.textContent = value ? 'Resume' : 'Pause';
-    updatePause();
-  };
-  pause.addEventListener('click', () => setDeveloperPause(!developerPaused));
-  restart.addEventListener('click', () => {
-    if (window.confirm('Restart the makeover and discard current progress?')) {
-      restartCount++;
-      setDeveloperPause(false);
-    }
-  });
-  controls.append(pause, restart);
-  document.body.append(controls);
 }
 
 function initialize() {
@@ -177,13 +164,19 @@ async function driveStorage() {
 
 window.runwayPlatform = {
   initialize,
+  whenActive,
 
   stageReady(debug) {
     readiness ??= initialize().then(() => {
-      document.getElementById('game-loading')?.remove();
-      if (debug) showDevelopmentControls();
       stageStarted = true;
       if (paused) Module.pauseMainLoop();
+      return whenActive();
+    }).then(() => {
+      document.getElementById('game-loading')?.remove();
+      if (debug) window.mountRunwayDevelopmentControls?.(value => {
+        developerPaused = value;
+        updatePause();
+      }, () => { restartCount++; });
       if (sdk?.isInitialized) {
         return sdk.platform.sendMessage(sdk.PLATFORM_MESSAGE.GAME_READY);
       }
