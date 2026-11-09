@@ -25,6 +25,15 @@ async function frame(page, clip) {
   return PNG.sync.read(screenshot).data;
 }
 
+function sameOutsideGuide(before, after, idleGuide, heldGuide) {
+  for (let i = 0; i < before.length; i += 4) {
+    // Pickup brightens the guides before any cream is applied, exposing the overlay pixels.
+    if (idleGuide.readUInt32LE(i) === heldGuide.readUInt32LE(i) &&
+        before.readUInt32LE(i) !== after.readUInt32LE(i)) return false;
+  }
+  return true;
+}
+
 async function openStage(page, url) {
   await page.goto(url);
   await page.locator('#game-loading').waitFor({ state: 'detached' });
@@ -158,12 +167,14 @@ async function checkHeldStroke(browser, url, touch, development) {
     const leftBefore = await frame(page, leftCheek);
     const rightBefore = await frame(page, rightCheek);
     await down(320, 828);
+    const leftWithHeldGuide = await frame(page, leftCheek);
     await move(127, 690);
     await move(127, 478);
     await move(216, 478);
     await move(62, 478);
     const partial = await frame(page, leftCheek);
-    assert.ok(!partial.equals(leftBefore), 'A held stroke applies visible cream to the left cheek');
+    assert.ok(!sameOutsideGuide(leftWithHeldGuide, partial, leftBefore, leftWithHeldGuide),
+      'A held stroke applies visible cream to the left cheek');
 
     await page.evaluate(() => window.hostPause(true));
     const frozen = await frame(page);
@@ -179,7 +190,9 @@ async function checkHeldStroke(browser, url, touch, development) {
       await up();
     }
     await wait(350);
-    assert.ok((await frame(page, leftCheek)).equals(partial), 'Resuming preserves the exact cream stroke');
+    const resumed = await frame(page, leftCheek);
+    assert.ok(sameOutsideGuide(partial, resumed, leftBefore, leftWithHeldGuide),
+      'Resuming preserves the exact cream stroke as the guide returns to its idle brightness');
     assert.ok((await frame(page, rightCheek)).equals(rightBefore), 'Stale input applies no cream to the opposite cheek');
 
     await down(320, 828);
