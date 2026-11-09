@@ -8,6 +8,7 @@ vertex_constants { name: "rect" type: CONSTANT_TYPE_USER }
 fragment_constants { name: "uv_basis_x" type: CONSTANT_TYPE_USER }
 fragment_constants { name: "uv_basis_y" type: CONSTANT_TYPE_USER }
 fragment_constants { name: "coverage" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "color_scale" type: CONSTANT_TYPE_USER }
 samplers {
   name: "artwork"
   wrap_u: WRAP_MODE_CLAMP_TO_EDGE

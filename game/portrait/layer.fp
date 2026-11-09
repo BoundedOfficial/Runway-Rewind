@@ -10,6 +10,7 @@ uniform fragment_uniforms
     highp vec4 uv_basis_x;
     highp vec4 uv_basis_y;
     mediump vec4 coverage;
+    mediump vec4 color_scale;
 };
 
 void main()
@@ -20,6 +21,11 @@ void main()
     {
         mask = mix(texture(reveal, uv).a, 1.0, coverage.x);
     }
-    // Atlas color already carries the artwork's feathered, premultiplied alpha.
-    out_fragColor = texture(artwork, art_uv) * mask;
+    // Ease the added color into the authored feather while keeping opacity intact.
+    vec4 color = texture(artwork, art_uv);
+    vec2 cheek = (uv - vec2(0.5, 0.435)) * vec2(1.9, 2.45);
+    float falloff = max(1.0 - dot(cheek, cheek), 0.0);
+    float strength = smoothstep(0.0, 1.0, color.a) * mix(1.0, falloff * falloff, color_scale.w);
+    color.rgb *= mix(vec3(1.0), color_scale.rgb, strength);
+    out_fragColor = color * mask;
 }
