@@ -1,0 +1,11 @@
+script: "/main/stage.gui_script"
+fonts {
+  name: "prompt"
+  font: "/main/prompt.font"
+}
+textures {
+  name: "portrait"
+  texture: "/assets/portrait.atlas"
+}
+material: "/builtins/materials/gui.material"
+max_nodes: 16
