@@ -5,7 +5,7 @@ const { setTimeout: wait } = require('node:timers/promises');
 const { chromium } = require('playwright-core');
 const { PNG } = require('pngjs');
 const { preview } = require('../scripts/serve.cjs');
-const { createStagePointer } = require('./stage-pointer.cjs');
+const { createStagePointer, holdPimples, pimples } = require('./stage-pointer.cjs');
 
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const evidence = process.env.STAGE_EVIDENCE_DIR;
@@ -53,10 +53,6 @@ async function play(browser, url, viewport, input, check, readyPage) {
 }
 
 const filled = ([r, g, b]) => r > 240 && g > 180 && g < 223 && b < 163;
-const blemishes = [
-  [257, 232], [346, 259], [389, 270], [249, 286], [219, 444], [351, 416], [431, 418],
-  [420, 432], [383, 453], [418, 493], [246, 531], [406, 528], [291, 574], [343, 572],
-];
 
 async function checkProgress({ down, move, up, snapshot }) {
   const start = await snapshot();
@@ -68,10 +64,7 @@ async function checkProgress({ down, move, up, snapshot }) {
   assert.ok(filled(first.pixel(212, 56)), 'The compact strip marks the current treatment');
   assert.ok(!filled(first.pixel(230, 56)), 'The next treatment is still pending');
   await down(320, 828);
-  for (const [x, y] of blemishes) {
-    await move(x - 28, y + 24);
-    await wait(34);
-  }
+  await holdPimples(move);
   await up();
   await wait(1300);
   const next = await snapshot('second-treatment-progress');
@@ -97,7 +90,7 @@ async function checkGuidance({ down, move, up, snapshot }) {
   await up();
   await wait(700);
   const ready = await snapshot('portrait-extraction-guides');
-  for (const [x, y] of blemishes.slice(0, 2)) {
+  for (const [x, y] of pimples.slice(0, 2)) {
     const arc = visibleArc(start, ready, x, y, 16);
     assert.ok(arc > 0.22 && arc < 0.79, `A thin dashed guide marks the blemish at ${x}, ${y} (${arc})`);
     assert.ok(visibleArc(start, ready, x, y, 12) < 0.08, 'The guide leaves the blemish visible');
@@ -106,7 +99,7 @@ async function checkGuidance({ down, move, up, snapshot }) {
   const idle = await snapshot();
   assert.equal(changedNear(ready, idle, 257, 232, 20), 0, 'The target stays marked while the player waits');
   await down(320, 828);
-  await move(229, 256);
+  await holdPimples(move, pimples.slice(0, 1));
   await up();
   await wait(350);
   const treated = await snapshot('portrait-one-target-treated');
@@ -145,8 +138,7 @@ async function checkViewport({ down, move, up, snapshot, stage, viewport }) {
   assert.ok(filled(ready.pixel(212, 56)), 'The current treatment stays visible above the face');
   assert.ok(changedNear(start, ready, 320, 828, 42) > 35, 'The tool arrives within reach');
   await down(320, 828);
-  await move(229, 256);
-  await wait(330);
+  await holdPimples(move, pimples.slice(0, 1));
   const held = await snapshot(name + '-held');
   assert.ok(changedNear(ready, held, 257, 232, 12) > 10, 'The working tip treats the targeted blemish');
   assert.equal(changedNear(ready, held, 346, 259, 8), 0, 'The other blemish stays intact');

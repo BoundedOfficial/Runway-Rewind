@@ -7,8 +7,9 @@ return {
         label = "Extract pimples",
         regions = artwork.extraction,
         target_radius = 13,
+        extraction_time = { approach = 0.24, press = 0.21, retract = 0.34 },
         settle_time = 0.22,
-        tool = { artwork = "extractor", tip_x = 0, tip_y = -49, sway = 5 },
+        tool = { artwork = "extractor", tip_x = 0, tip_y = -49 },
     },
     {
         id = "cleansing-cream",

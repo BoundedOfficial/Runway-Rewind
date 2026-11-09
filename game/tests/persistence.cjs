@@ -5,6 +5,7 @@ const { setTimeout: wait } = require('node:timers/promises');
 const { chromium } = require('playwright-core');
 const { PNG } = require('pngjs');
 const { preview } = require('../scripts/serve.cjs');
+const { pimples, extractionHold } = require('./stage-pointer.cjs');
 
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const evidence = process.env.STAGE_EVIDENCE_DIR;
@@ -14,9 +15,6 @@ const otherCheek = { x: 353, y: 425, width: 102, height: 85 };
 const portrait = { x: 55, y: 150, width: 530, height: 610 };
 const replay = { x: 194, y: 874, width: 94, height: 27 };
 const next = { x: 352, y: 874, width: 94, height: 27 };
-const pimples = [[257, 232], [346, 259], [389, 270], [249, 286], [219, 444],
-  [351, 416], [431, 418], [420, 432], [383, 453], [418, 493], [246, 531],
-  [406, 528], [291, 574], [343, 572]];
 const leftHair = [[90, 730], [91, 440], [171, 440], [171, 385], [111, 385],
   [111, 330], [180, 330], [180, 275], [110, 275], [118, 220], [174, 220], [163, 170], [126, 170]];
 const rightHair = [[553, 730], [549, 440], [469, 440], [469, 385], [529, 385],
@@ -31,13 +29,13 @@ async function frame(page, clip, name) {
   return PNG.sync.read(bytes).data;
 }
 
-async function stroke(page, points) {
+async function stroke(page, points, hold = 32) {
   await page.mouse.move(320, 828);
   await page.mouse.down();
   await wait(60);
   for (const [x, y] of points) {
     await page.mouse.move(x - 28, y + 24);
-    await wait(32);
+    await wait(hold);
   }
   await page.mouse.up();
 }
@@ -80,7 +78,7 @@ async function checkStandaloneReload(page, url) {
   await ready(page);
   const dirty = await frame(page, blemish);
   await start(page);
-  await stroke(page, pimples);
+  await stroke(page, pimples, extractionHold);
   await wait(1400);
   const extracted = await frame(page, blemish);
   assert.ok(!extracted.equals(dirty), 'Extraction visibly clears the first pimple');
@@ -183,7 +181,7 @@ async function checkFailedLoad(page, url) {
   await ready(page);
   const dirty = await frame(page, blemish);
   await start(page);
-  await stroke(page, pimples);
+  await stroke(page, pimples, extractionHold);
   await wait(1000);
   const extracted = await frame(page, blemish);
   assert.ok(!dirty.equals(extracted), 'An initial load failure leaves extraction playable');
@@ -221,7 +219,7 @@ async function checkSlowLoad(page, url) {
   await ready(page);
   const dirty = await frame(page, blemish);
   await start(page);
-  await stroke(page, pimples);
+  await stroke(page, pimples, extractionHold);
   await wait(1000);
   const extracted = await frame(page, blemish);
   assert.ok(!dirty.equals(extracted), 'An unresolved load leaves the current visit playable');
@@ -344,7 +342,7 @@ async function checkReplayOrdering(page, url) {
   await frame(page, null, 'replay-reset-after-delayed-completion');
   const dirtyBlemish = await frame(page, blemish);
   await start(page);
-  await stroke(page, [[257, 232]]);
+  await stroke(page, pimples.slice(0, 1), extractionHold);
   await wait(250);
   assert.ok(!(await frame(page, blemish)).equals(dirtyBlemish), 'Replay starts a fresh run at extraction');
 }

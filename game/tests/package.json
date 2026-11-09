@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "test": "node launch.cjs",
+    "test:extraction": "node extraction.cjs",
     "test:lifecycle": "node lifecycle.cjs",
     "test:persistence": "node persistence.cjs"
   },

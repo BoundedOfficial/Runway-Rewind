@@ -3,8 +3,8 @@ local target_guidance = require "main.target_guidance"
 
 local M = {}
 local RENDER = "@render:"
-local REST = vmath.vector3(320, 828, 0)
-local OFFSTAGE = vmath.vector3(710, 828, 0)
+local REST = vmath.vector4(320, 828, 0, 1)
+local OFFSTAGE = vmath.vector4(710, 828, 0, 1)
 local TOOL_SIZE = 118
 local TIP_X, TIP_Y = 28, -24
 local TIMING = { entering = 0.46, returning = 0.27, completing = 0.18, exiting = 0.28 }
@@ -18,10 +18,11 @@ local function ease(t)
     return t * t * (3 - 2 * t)
 end
 
-local function position(self, x, y, angle)
-    self.pose = vmath.vector3(x, y, angle)
+local function position(self, x, y, angle, scale)
+    self.pose = vmath.vector4(x, y, angle, scale)
     gui.set_position(self.tool_node, vmath.vector3(x, artwork.height - y, 0))
     gui.set_rotation(self.tool_node, vmath.vector3(0, 0, angle))
+    gui.set_scale(self.tool_node, vmath.vector3(scale, scale, 1))
 end
 
 local function animate(self, state, to)
@@ -75,7 +76,7 @@ local function begin(self, index)
     gui.set_enabled(self.hud.background, true)
     gui.set_enabled(self.tool_node, true)
     gui.play_flipbook(self.tool_node, treatment.tool.artwork)
-    position(self, OFFSTAGE.x, OFFSTAGE.y, 0)
+    position(self, OFFSTAGE.x, OFFSTAGE.y, 0, 1)
     animate(self, "entering", REST)
     frame_during_transition(self, treatment.camera)
 end
@@ -132,33 +133,62 @@ local function paint(self, ax, ay, bx, by)
     end
 end
 
+local function portrait_point(camera, x, y)
+    return camera.x + (x - CENTER_X) / camera.z, camera.y + (y - CENTER_Y) / camera.z
+end
+
+local function tip_pose(self, x, y, angle, scale)
+    local tool = self.treatment.tool
+    local radians = math.rad(angle)
+    local sin, cos = math.sin(radians), math.cos(radians)
+    -- Pivot around the artwork tip, which is also the endpoint of coverage.
+    local offset_x = (tool.tip_x * cos + tool.tip_y * sin) * scale
+    local offset_y = (-tool.tip_x * sin + tool.tip_y * cos) * scale
+    position(self, x - offset_x, y - offset_y, angle, scale)
+end
+
 local function extract(self, x, y)
+    local bx, by = portrait_point(self.camera, x, y)
     local nearest
     local distance = self.treatment.target_radius ^ 2
     for index, id in ipairs(self.treatment.regions) do
         local anchor = artwork.regions[id].anchor
-        local squared = (x - anchor[1]) ^ 2 + (y - anchor[2]) ^ 2
+        local squared = (bx - anchor[1]) ^ 2 + (by - anchor[2]) ^ 2
         if squared < distance then
             nearest, distance = index, squared
         end
     end
-    if nearest and not self.regions[nearest].settle then
-        self.regions[nearest].settle = 0
-        target_guidance.complete(self.hud.guides, nearest)
-    end
-end
-
-local function portrait_point(camera, x, y)
-    return camera.x + (x - CENTER_X) / camera.z, camera.y + (y - CENTER_Y) / camera.z
+    if not nearest or self.regions[nearest].settle then return end
+    local anchor = artwork.regions[self.treatment.regions[nearest]].anchor
+    local camera = self.camera
+    local target_x = CENTER_X + (anchor[1] - camera.x) * camera.z
+    local target_y = CENTER_Y + (anchor[2] - camera.y) * camera.z
+    self.extraction = {
+        index = nearest,
+        elapsed = 0,
+        from = vmath.vector4(x, y - 15, 3, 0.96),
+        hover = vmath.vector4(target_x, target_y - 5, 14, 0.97),
+        contact = vmath.vector4(target_x, target_y, 0, 1.07),
+        lift = vmath.vector4(target_x - 4, target_y - 15, -10, 0.95),
+    }
 end
 
 local function aim(self, x, y)
     -- Coverage runs in portrait space. The tool pose stays in stage space.
     local tip_x, tip_y = x + TIP_X, y + TIP_Y
-    local bx, by = portrait_point(self.camera, tip_x, tip_y)
-    if self.treatment.target_radius then
-        extract(self, bx, by)
-    elseif self.tip_x and (tip_x ~= self.tip_x or tip_y ~= self.tip_y) then
+    local moved = tip_x ~= self.tip_x or tip_y ~= self.tip_y
+    if self.treatment.extraction_time then
+        self.tip_x, self.tip_y = tip_x, tip_y
+        -- Record movement during the press without starting or queuing another target.
+        if self.extraction or not moved then return end
+        extract(self, tip_x, tip_y)
+        local pose = self.extraction and self.extraction.from or vmath.vector4(tip_x, tip_y, 0, 1)
+        tip_pose(self, pose.x, pose.y, pose.z, pose.w)
+        target_guidance.aim(self.hud.guides, pose.x, pose.y)
+        return
+    end
+    if self.tip_x and moved then
+        local bx, by = portrait_point(self.camera, tip_x, tip_y)
         local ax, ay = portrait_point(self.camera, self.tip_x, self.tip_y)
         paint(self, ax, ay, bx, by)
     end
@@ -169,20 +199,17 @@ end
 local function held_pose(self)
     local tool = self.treatment.tool
     local angle = math.sin(self.elapsed * 11) * tool.sway * 0.72
-    local radians = math.rad(angle)
-    local sin, cos = math.sin(radians), math.cos(radians)
-    -- Rotate around the artwork tip, which is also the endpoint of coverage.
-    local x = tool.tip_x * cos + tool.tip_y * sin
-    local y = -tool.tip_x * sin + tool.tip_y * cos
-    position(self, self.tip_x - x, self.tip_y - y, angle)
+    tip_pose(self, self.tip_x, self.tip_y, angle, 1)
 end
 
 function M.cancel(self, pointer_lost)
     if pointer_lost then self.pointer_down = false end
     self.tip_x, self.tip_y = nil, nil
     if self.state == "held" then
-        animate(self, "returning", REST)
         target_guidance.release(self.hud.guides)
+        if self.extraction and self.extraction.popped then return end
+        self.extraction = nil
+        animate(self, "returning", REST)
     end
 end
 
@@ -200,11 +227,40 @@ function M.input(self, x, y, pressed, released, pointer_button)
             end
             target_guidance.hold(self.hud.guides)
             aim(self, x, y)
-            held_pose(self)
+            if not self.treatment.extraction_time then held_pose(self) end
         end
-    elseif self.state == "held" then
+    elseif self.state == "held" and self.tip_x then
         aim(self, x, y)
-        held_pose(self)
+        if not self.treatment.extraction_time then held_pose(self) end
+    end
+end
+
+local function advance_extraction(self, dt)
+    local extraction = self.extraction
+    local timing = self.treatment.extraction_time
+    local pop_time = timing.approach + timing.press
+    extraction.elapsed = extraction.elapsed + dt
+    local elapsed = extraction.elapsed
+    local pose
+    if elapsed < timing.approach then
+        pose = vmath.lerp(ease(elapsed / timing.approach), extraction.from, extraction.hover)
+    elseif elapsed < pop_time then
+        pose = vmath.lerp(ease((elapsed - timing.approach) / timing.press), extraction.hover, extraction.contact)
+    else
+        if not extraction.popped then
+            extraction.popped = true
+            self.regions[extraction.index].settle = 0
+            target_guidance.complete(self.hud.guides, extraction.index)
+        end
+        local retract = math.min(1, (elapsed - pop_time) / timing.retract)
+        pose = vmath.lerp(ease(retract), extraction.contact, extraction.lift)
+        if retract == 1 then self.extraction = nil end
+    end
+    tip_pose(self, pose.x, pose.y, pose.z, pose.w)
+    if self.tip_x then
+        target_guidance.aim(self.hud.guides, pose.x, pose.y)
+    elseif not self.extraction then
+        animate(self, "returning", REST)
     end
 end
 
@@ -224,25 +280,29 @@ end
 function M.update(self, dt)
     local state = self.state
     if state == "finished" then return end
-    if state ~= "completing" and state ~= "exiting" and settle(self, dt) then
+    if state ~= "completing" and state ~= "exiting" and settle(self, dt) and not self.extraction then
         msg.post(RENDER, "commit_treatment")
         self.tip_x, self.tip_y = nil, nil
         local pose = self.pose
         clear_guidance(self)
-        animate(self, "completing", vmath.vector3(pose.x, pose.y - 8, pose.z + 4))
+        animate(self, "completing", vmath.vector4(pose.x, pose.y - 8, pose.z + 4, 1))
         return self.treatment.id
     end
 
     if state == "ready" then return end
     self.elapsed = self.elapsed + dt
     if state == "held" then
-        held_pose(self)
+        if self.extraction then
+            advance_extraction(self, dt)
+        elseif not self.treatment.extraction_time then
+            held_pose(self)
+        end
         return
     end
 
     local t = math.min(1, self.elapsed / TIMING[state])
     local pose = vmath.lerp(ease(t), self.from, self.to)
-    position(self, pose.x, pose.y, pose.z)
+    position(self, pose.x, pose.y, pose.z, pose.w)
     if self.camera_to and self.camera_from ~= self.camera_to then
         set_camera(self, vmath.lerp(ease(t), self.camera_from, self.camera_to))
     end

@@ -5,6 +5,7 @@ const { setTimeout: wait } = require('node:timers/promises');
 const { chromium } = require('playwright-core');
 const { PNG } = require('pngjs');
 const { preview } = require('../scripts/serve.cjs');
+const { aimPimple, holdPimples, pimples: blemishes } = require('./stage-pointer.cjs');
 
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const evidence = process.env.STAGE_EVIDENCE_DIR;
@@ -36,10 +37,6 @@ function lipBounds({ left, top, right, bottom }) {
   const [x1, y1] = lipFrame(right, bottom);
   return { left: Math.ceil(x0), top: Math.ceil(y0), right: Math.floor(x1), bottom: Math.floor(y1) };
 }
-const blemishes = [
-  [257, 232], [346, 259], [389, 270], [249, 286], [219, 444], [351, 416], [431, 418],
-  [420, 432], [383, 453], [418, 493], [246, 531], [406, 528], [291, 574], [343, 572],
-];
 const around = ([x, y]) => ({ left: x - 5, right: x + 6, top: y - 5, bottom: y + 6 });
 
 function changedPixels(before, after, bounds, tolerance = 15) {
@@ -192,8 +189,8 @@ async function checkStage(browser, url, input, release) {
       }
     }
     await down(320, 828);
-    await move(257 - 28, 232 + 24);
-    await wait(350);
+    await aimPimple(move, blemishes[0]);
+    await wait(180);
     if (release && session) {
       // A second contact moves from the second blemish to a third while the
       // primary contact stays on the first target.
@@ -208,6 +205,7 @@ async function checkStage(browser, url, input, release) {
       });
       await wait(65);
     }
+    await wait(750);
     await up();
     await wait(350);
     const extractedFrame = await canvas.screenshot();
@@ -222,10 +220,7 @@ async function checkStage(browser, url, input, release) {
     saveEvidence(input, 'extraction-one-target', extractedFrame);
 
     await down(320, 828);
-    for (const [x, y] of blemishes.slice(1, -1)) {
-      await move(x - 28, y + 24);
-      await wait(34);
-    }
+    await holdPimples(move, blemishes.slice(1, -1));
     await up();
     await wait(350);
     const almost = PNG.sync.read(await canvas.screenshot());
@@ -234,8 +229,7 @@ async function checkStage(browser, url, input, release) {
     assert.equal(changedPixels(dirty, almost, toolRest), 0, 'The extractor stays until every target is clear');
 
     await down(320, 828);
-    await move(343 - 28, 572 + 24);
-    await wait(75);
+    await holdPimples(move, blemishes.slice(-1));
     await up();
     await wait(1150);
     const startFrame = await canvas.screenshot();

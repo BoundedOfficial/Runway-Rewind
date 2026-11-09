@@ -1,6 +1,6 @@
 # Defold game
 
-A fresh Level 1 run opens on the dirty portrait. **Start makeover** introduces the extractor. Pick it up and guide its tip over each of the fourteen pimples. The next tools arrive in order for cleansing cream, face and neck wiping, robe cleanup, eyebrow shaving, lip scrub, and hydration. Foundation, brow fill, eye makeup, blush and contour, crimson lipstick, and hair styling complete the makeover. After the finished portrait reveal, **Replay** returns to the dirty portrait and **Next** opens the end-of-content screen.
+A fresh Level 1 run opens on the dirty portrait. **Start makeover** introduces the extractor. Pick it up and guide its tip to each of the fourteen pimples. Keep holding while the extractor presses and lifts, then move to the next pimple. The next tools arrive in order for cleansing cream, face and neck wiping, robe cleanup, eyebrow shaving, lip scrub, and hydration. Foundation, brow fill, eye makeup, blush and contour, crimson lipstick, and hair styling complete the makeover. After the finished portrait reveal, **Replay** returns to the dirty portrait and **Next** opens the end-of-content screen.
 
 ## Windows host setup
 
@@ -104,6 +104,8 @@ npm test --prefix game/tests
 
 Set `CHROME_PATH` to use a different Chrome executable. Set `STAGE_EVIDENCE_DIR` to save canvas PNGs from startup, tool use, and partial and settled skincare. Pass an alternate bundle directory to the check using `npm test --prefix game/tests -- "<bundle directory>"`.
 
+Run `npm run test:extraction --prefix game/tests` to check the approach, press, and lift with mouse and simulated touch. The check also covers quick swipes, early release, and platform pauses. Set `STAGE_EVIDENCE_DIR` to capture the phases.
+
 Run `node game/tests/presentation.cjs "<debug bundle directory>"` to check the
 treatment label and progress, first-use drag guidance, and idle hints. The check
 uses mouse and simulated touch with focused portrait, landscape, and square
@@ -159,7 +161,7 @@ node game/tests/finish.cjs ".scratch/finish/Runway Rewind"
 
 ### Runner and renderer
 
-`treatments/runner.lua` consumes the ordered definitions in `treatments/level_one.lua`. Each continuous treatment supplies an ID, ordered authored region IDs, brush radius, and tool artwork with its tip anchor. Extraction supplies `target_radius` instead of a brush radius and settles the nearest authored target under the held tip. The runner handles input and timing and reports the committed treatment ID once through the stage's `treatment_completed` message. The stage suspends runner updates during pause and calls `runner.cancel` to break a held stroke. Starting at a later treatment reconstructs the portrait from the preceding treatment definitions and restores temporary products before their removal treatment. Replay and development restart share the stage reset path, which emits `makeover_reset`.
+`treatments/runner.lua` consumes the ordered definitions in `treatments/level_one.lua`. Each continuous treatment supplies an ID, ordered authored region IDs, brush radius, and tool artwork with its tip anchor. Extraction supplies `target_radius` and `extraction_time` for the approach, press, and lift. It locks onto one authored target until the extractor lifts. The pimple starts clearing and its dashed guide disappears when the press lands. Releasing or pausing before the press lands cancels the attempt. The runner handles input and timing and reports the committed treatment ID once through the stage's `treatment_completed` message. The stage suspends runner updates during pause and calls `runner.cancel` to break a held stroke. Starting at a later treatment reconstructs the portrait from the preceding treatment definitions and restores temporary products before their removal treatment. Replay and development restart share the stage reset path, which emits `makeover_reset`.
 
 An optional `camera` on a treatment sets the scale and center in the artwork's
 top-left coordinates. Framing eases during tool arrival. The runner maps the
