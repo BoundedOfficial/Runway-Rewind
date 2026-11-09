@@ -1,5 +1,7 @@
 go.property("artwork", resource.atlas("/assets/generated/portraits.atlas"))
 
+go.property("splat", resource.atlas("/assets/pimple-pop/splat.atlas"))
+
 function init(self)
-    msg.post("@render:", "load_portrait_artwork", { atlas = self.artwork })
+    msg.post("@render:", "load_portrait_artwork", { atlas = self.artwork, splat = self.splat })
 end

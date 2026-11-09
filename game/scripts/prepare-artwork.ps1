@@ -1,7 +1,7 @@
 param([Parameter(Mandatory)][string]$Project)
 
 $ErrorActionPreference = 'Stop'
-$source = Join-Path $Project '../.prototype/Level 1/v1/assets'
+$source = Join-Path $Project 'artwork/level-1/assets'
 $generated = Join-Path $Project 'assets/generated'
 New-Item -ItemType Directory -Force -Path $generated | Out-Null
 $recipes = Get-ChildItem -LiteralPath (Join-Path $Project 'assets/recipes') -Filter '*.json' |

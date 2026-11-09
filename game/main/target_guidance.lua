@@ -3,7 +3,6 @@ local artwork = require "portrait.artwork"
 local M = {}
 local CENTER_X, CENTER_Y = artwork.width / 2, artwork.height / 2
 local TARGET_COLOR = vmath.vector4(1, 1, 0.69, 0.55)
-local TIP_COLOR = vmath.vector4(1, 1, 0.78, 0.85)
 
 local function marker()
     local node = gui.new_box_node(vmath.vector3(), vmath.vector3())
@@ -33,8 +32,6 @@ function M.create(sequence)
         gui.set_color(node, TARGET_COLOR)
         self.targets[index] = node
     end
-    self.tip = marker()
-    gui.set_color(self.tip, TIP_COLOR)
     return self
 end
 
@@ -42,7 +39,6 @@ function M.clear(self)
     for _, node in ipairs(self.targets) do
         gui.set_enabled(node, false)
     end
-    gui.set_enabled(self.tip, false)
 end
 
 function M.show(self, treatment, camera)
@@ -67,7 +63,6 @@ function M.show(self, treatment, camera)
         gui.set_alpha(node, TARGET_COLOR.w)
         gui.set_enabled(node, true)
     end
-    shape(self.tip, (treatment.target_radius or treatment.radius) * camera.z, 0, 0)
 end
 
 function M.complete(self, index)
@@ -80,13 +75,7 @@ function M.hold(self)
     end
 end
 
-function M.aim(self, x, y)
-    place(self.tip, x, y)
-    gui.set_enabled(self.tip, true)
-end
-
 function M.release(self)
-    gui.set_enabled(self.tip, false)
     for _, node in ipairs(self.targets) do
         gui.set_alpha(node, TARGET_COLOR.w)
     end

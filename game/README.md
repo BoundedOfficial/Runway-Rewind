@@ -23,7 +23,7 @@ The setup script verifies the SHA-256 of each upstream download before use.
 | [Playgama Bridge](https://github.com/Playgama/bridge/releases/tag/v2.4.1) | 2.4.1 | JavaScript SDK served with the game |
 | [Playwright Core](https://www.npmjs.com/package/playwright-core/v/1.58.2) and [PNGJS](https://www.npmjs.com/package/pngjs/v/7.0.0) | 1.58.2 and 7.0.0 | Host-only Chrome smoke check |
 
-The build imports the starting portrait, authored layers, and tool sprites from `.prototype/Level 1/v1/assets/` and stages the checked Bridge download as a bundle resource. Artwork recipes in `game/assets/recipes/` select authored region IDs or wildcard patterns and map tool names to cells of the 4-by-4 tool sheet or to standalone images. The build generates Defold atlases and imports the original hit cells in `game/assets/generated/`. Open `game/game.project` in the matching Defold editor after preparing the artwork with the build script.
+The build imports the starting portrait, authored layers, and tool sprites from `game/artwork/level-1/assets/` and stages the checked Bridge download as a bundle resource. Artwork recipes in `game/assets/recipes/` select authored region IDs or wildcard patterns and map tool names to cells of the 4-by-4 tool sheet or to standalone images. The build generates Defold atlases and imports the original hit cells in `game/assets/generated/`. Open `game/game.project` in the matching Defold editor after preparing the artwork with the build script.
 
 ## Build audit
 
@@ -35,7 +35,9 @@ The standalone preview uses the unmodified SDK. The target archives bundle a sep
 
 ## Platform packages
 
-**Release workflow correction:** delivery goes through Playgama, including distribution to YouTube. The separate platform-forced ZIPs described below are compatibility-test artifacts from the earlier implementation, not two required publishing handoffs. A distribution handoff must let Bridge select the host platform rather than force either adapter. The existing packaging script still generates those test artifacts.
+Delivery goes through Playgama, including distribution to YouTube. The default packager produces one `runway-rewind-playgama.zip` with automatic Bridge platform detection. It does not force a platform adapter or add a separate YouTube SDK loader.
+
+Use `./game/scripts/package-html5.ps1` for this distribution archive. The optional `-CompatibilityTargets` switch produces the two forced-platform archives used by the historical compatibility checks below; those archives are not publishing handoffs.
 
 Run from the checkout you intend to package. Setup is shared with the preview.
 In a linked worktree, supply the main checkout's `.scratch/toolchain` to
@@ -43,7 +45,7 @@ In a linked worktree, supply the main checkout's `.scratch/toolchain` to
 archives after worktree cleanup.
 
 ```powershell
-./game/scripts/package-html5.ps1
+./game/scripts/package-html5.ps1 -CompatibilityTargets
 npm ci --prefix game/tests
 Expand-Archive .scratch/releases/runway-rewind-youtube.zip .scratch/releases/youtube -Force
 Expand-Archive .scratch/releases/runway-rewind-playgama.zip .scratch/releases/playgama -Force

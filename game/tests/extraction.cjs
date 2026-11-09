@@ -33,13 +33,15 @@ function changedPixels(before, after, [cx, cy], radius = 5) {
   return changed;
 }
 
-function freshPalePixels(before, after, [cx, cy]) {
-  const pale = (data, i) => data[i] > 225 && data[i + 1] > 195 && data[i + 2] > 148;
+function freshSprayPixels(before, after, [cx, cy]) {
+  const spray = (data, i) => (data[i] > 225 && data[i + 1] > 195 && data[i + 2] > 148) ||
+    (data[i] > 100 && data[i] > data[i + 1] * 1.7 && data[i] > data[i + 2] * 1.5);
   let count = 0;
-  for (let y = cy - 17; y <= cy + 1; y++) {
-    for (let x = cx + 10; x <= cx + 32; x++) {
+  for (let y = cy - 40; y <= cy + 10; y++) {
+    for (let x = cx - 40; x <= cx + 40; x++) {
+      if (Math.abs(x - cx) < 10) continue; // Exclude the extractor itself.
       const i = 4 * (y * before.width + x);
-      if (!pale(before.data, i) && pale(after.data, i)) count++;
+      if (!spray(before.data, i) && spray(after.data, i)) count++;
     }
   }
   return count;
@@ -124,8 +126,8 @@ async function checkExtraction(browser, url, input) {
     await wait(515);
     await platformFocus(false);
     const pausedLift = await frame(page, `${input}-paused-pop`);
-    assert.ok(freshPalePixels(ready, pausedLift, second) >= 24,
-      'A pale bead briefly emerges from the pimple as the extractor lifts');
+    assert.ok(freshSprayPixels(ready, pausedLift, second) >= 24,
+      'The red-and-ivory spray visibly bursts from the pimple as the extractor lifts');
     await pointer.up();
     await wait(300);
     assert.ok((await frame(page)).data.equals(pausedLift.data), 'A platform pause also freezes the lift');
@@ -134,7 +136,7 @@ async function checkExtraction(browser, url, input) {
     const returned = await frame(page, `${input}-two-targets-returned`);
     assert.ok(changedPixels(ready, returned, first) > 45, 'The first result persists after release');
     assert.ok(changedPixels(ready, returned, second) > 45, 'The second result persists through pause and release');
-    assert.equal(freshPalePixels(ready, returned, second), 0, 'The bead clears as the pimple settles');
+    assert.equal(freshSprayPixels(ready, returned, second), 0, 'The splat clears as the pimple settles');
     assert.equal(changedPixels(ready, returned, third, 12), 0, 'The untouched pimple keeps its guide');
     assert.equal(changedPixels(ready, returned, [320, 837], 26), 0, 'The extractor returns to its resting position');
     assert.deepEqual(errors, []);

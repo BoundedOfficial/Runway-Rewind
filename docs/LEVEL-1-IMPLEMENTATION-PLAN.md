@@ -1,3 +1,5 @@
+> Completed on 2026-11-09. Prototype paths below are historical; production source artwork now lives in `game/artwork/level-1`.
+
 # Level 1 implementation plan
 
 Status: approved by the user on 2026-11-09. Shared understanding confirmed; ready for implementation. Implementation has not started.

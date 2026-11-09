@@ -1,4 +1,12 @@
-# Level 1 release acceptance
+# Level 1 acceptance
+
+Level 1 was accepted by the user on 2026-11-09 after the visual and interaction revisions. Final local checks passed the seven skincare treatments, five makeup treatments, and hair/final reveal with mouse and simulated touch. All thirteen tools were checked at 390 × 844, held and at rest.
+
+After prototype removal, the debug build and default release packager passed. The distribution ZIP was checked for automatic platform detection, absence of development controls/direct YouTube loader, and error-free rendering in Chrome.
+
+The records below describe earlier compatibility builds, not the final distribution artifact. Those temporary ZIPs were removed during completion cleanup. Reproduce them with `package-html5.ps1 -CompatibilityTargets`; the default packager now produces one auto-detected Playgama distribution ZIP.
+
+## Historical compatibility acceptance
 
 Verified locally on 2026-11-09 using Windows x64 build 26200, PowerShell 7.6.9,
 Node.js 24.16.0, and headless Chrome 156.0.8078.81. The packages were built

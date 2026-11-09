@@ -100,13 +100,19 @@ end
 local function draw_extraction(self, effect)
     local constants = self.extraction_constants
     local phase = effect.phase
-    local size = 66
-    constants.rect = vmath.vector4(phase.x - size / 2, phase.y - size / 2, size, size)
+    local pressing = phase.z > 0
+    local size = pressing and 66 or 128
+    -- Spray frames share a centered emitter; keep it anchored to the pore.
+    constants.rect = vmath.vector4(phase.x - size / 2, phase.y - size * 0.5, size, size)
+    local frame = self.splat_frames[math.min(8, 1 + math.floor(phase.w * 8))]
+    constants.uv_basis_x, constants.uv_basis_y = frame.basis_x, frame.basis_y
     constants.extraction = phase
-    constants.dimensions = vmath.vector4(WIDTH, HEIGHT, size, effect.bead_travel)
+    constants.dimensions = vmath.vector4(WIDTH, HEIGHT, size, 0)
     render.enable_material("extraction")
     render.enable_texture("portrait", self.committed, COLOR)
+    render.enable_texture("splat", self.splat_texture)
     render.draw(self.quad, { constants = constants })
+    render.disable_texture("splat")
     render.disable_texture("portrait")
     render.disable_material()
 end
@@ -262,7 +268,7 @@ function update(self)
         draw_layer(self, self.committed, self.surface)
         local effect = self.extraction
         -- Squeeze the underlying skin before the reveal and draw the released
-        -- bead above it, beneath the GUI tool.
+        -- animated splat above it, beneath the GUI tool.
         if effect and effect.phase.z > 0 then draw_extraction(self, effect) end
         for _, region in ipairs(self.active) do
             draw_layer(self, region.texture, region.layer, region.mask, region.settle)
@@ -278,6 +284,14 @@ end
 function on_message(self, id, message)
     if id == hash("load_portrait_artwork") then
         load_atlas(self, message.atlas)
+        local atlas = resource.get_atlas(message.splat)
+        local texture = resource.get_texture_info(atlas.texture)
+        self.splat_texture, self.splat_frames = texture.handle, {}
+        for _, animation in ipairs(atlas.animations) do
+            local index = tonumber(animation.id:match("frame%-(%d+)"))
+            local bx, by = atlas_basis(atlas.geometries[animation.frames[1]], texture)
+            self.splat_frames[index] = { basis_x = bx, basis_y = by }
+        end
         table.insert(self.queue, 1, { run = commands[hash("reset_portrait")], message = { completed = {} } })
     elseif commands[id] then
         self.queue[#self.queue + 1] = { run = commands[id], message = message }

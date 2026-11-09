@@ -29,7 +29,7 @@ sequence[#sequence + 1] = {
             },
         },
     },
-    tool = { artwork = "styling-brush", tip_x = 0, tip_y = -36, sway = 9 },
+    tool = { artwork = "styling-brush", scale = 2.9, follow_camera = true, tip_x = 0, tip_y = -28, sway = 9 },
 }
 
 return sequence

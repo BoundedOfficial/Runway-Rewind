@@ -1,6 +1,7 @@
 param(
     [string]$Toolchain = (Join-Path $PSScriptRoot '../../.scratch/toolchain'),
-    [string]$ReleaseOutput = (Join-Path $PSScriptRoot '../../.scratch/releases')
+    [string]$ReleaseOutput = (Join-Path $PSScriptRoot '../../.scratch/releases'),
+    [switch]$CompatibilityTargets
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,7 +41,8 @@ $report = [ordered]@{
     packages = [ordered]@{}
 }
 
-foreach ($target in @('youtube', 'playgama')) {
+$targets = if ($CompatibilityTargets) { @('youtube', 'playgama') } else { @('distribution') }
+foreach ($target in $targets) {
     $destination = Join-Path $work $target
     Copy-Item -LiteralPath $bundle -Destination $destination -Recurse
     Copy-Item -LiteralPath $patchedBridge -Destination (Join-Path $destination 'playgama-bridge.js') -Force
@@ -55,11 +57,11 @@ and corresponding source at the original release.
 '@
 
     $configuration = [ordered]@{
-        forciblySetPlatformId = $target
         sendAnalyticsEvents = $false
         debug = $false
         loadingScreenType = 'none'
     }
+    if ($CompatibilityTargets) { $configuration.forciblySetPlatformId = $target }
     $configuration | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $destination 'playgama-bridge-config.json')
 
     $index = Join-Path $destination 'index.html'
@@ -86,11 +88,11 @@ and corresponding source at the original release.
     if ($target -eq 'youtube' -and ($files.Count -gt 8000 -or $largest -ge 30MB -or $total -ge 250MB)) {
         throw 'The YouTube package exceeds a file count, per-file, or total size limit.'
     }
-    if ($target -eq 'playgama' -and $total -gt 300000000) {
+    if ($target -ne 'youtube' -and $total -gt 300000000) {
         throw 'The Playgama package exceeds the 300 MB game-file budget.'
     }
 
-    $archiveName = "runway-rewind-$target.zip"
+    $archiveName = if ($target -eq "distribution") { "runway-rewind-playgama.zip" } else { "runway-rewind-$target.zip" }
     $zip = Join-Path $work $archiveName
     $archive = [IO.Compression.ZipFile]::Open($zip, [IO.Compression.ZipArchiveMode]::Create)
     try {
