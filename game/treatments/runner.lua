@@ -204,17 +204,37 @@ local function extract(self, x, y)
     end
     if not nearest or self.regions[nearest].settle then return end
     local anchor = artwork.regions[self.treatment.regions[nearest]].anchor
+    local bead_travel = 21
+    for index, id in ipairs(self.treatment.regions) do
+        local other = artwork.regions[id].anchor
+        local dx = other[1] - anchor[1] - bead_travel
+        local dy = other[2] - anchor[2] + 10
+        if index ~= nearest and dx ^ 2 + dy ^ 2 < 22 ^ 2 then
+            -- Keep the bead away from the neighboring pimple on a close pair.
+            bead_travel = -bead_travel
+            break
+        end
+    end
     local camera = self.camera
     local target_x = CENTER_X + (anchor[1] - camera.x) * camera.z
     local target_y = CENTER_Y + (anchor[2] - camera.y) * camera.z
     self.extraction = {
         index = nearest,
+        anchor = vmath.vector3(anchor[1], artwork.height - anchor[2], 0),
+        bead_travel = bead_travel,
         elapsed = 0,
         from = vmath.vector4(x, y - 15, 3, 0.96),
         hover = vmath.vector4(target_x, target_y - 5, 14, 0.97),
         contact = vmath.vector4(target_x, target_y, 0, 1.07),
         lift = vmath.vector4(target_x - 4, target_y - 15, -10, 0.95),
     }
+end
+
+local function extraction_effect(extraction, pressure, release)
+    msg.post(RENDER, "extraction_effect", {
+        phase = vmath.vector4(extraction.anchor.x, extraction.anchor.y, pressure, release),
+        bead_travel = extraction.bead_travel,
+    })
 end
 
 local function aim(self, x, y)
@@ -252,6 +272,7 @@ function M.cancel(self, pointer_lost)
     if self.state == "held" then
         target_guidance.release(self.hud.guides)
         if self.extraction and self.extraction.popped then return end
+        if self.extraction then extraction_effect(self.extraction, 0, 1) end
         self.extraction = nil
         animate(self, "returning", REST)
     end
@@ -289,7 +310,9 @@ local function advance_extraction(self, dt)
     if elapsed < timing.approach then
         pose = vmath.lerp(ease(elapsed / timing.approach), extraction.from, extraction.hover)
     elseif elapsed < pop_time then
-        pose = vmath.lerp(ease((elapsed - timing.approach) / timing.press), extraction.hover, extraction.contact)
+        local press = ease((elapsed - timing.approach) / timing.press)
+        pose = vmath.lerp(press, extraction.hover, extraction.contact)
+        extraction_effect(extraction, press, 1)
     else
         if not extraction.popped then
             extraction.popped = true
@@ -298,6 +321,7 @@ local function advance_extraction(self, dt)
         end
         local retract = math.min(1, (elapsed - pop_time) / timing.retract)
         pose = vmath.lerp(ease(retract), extraction.contact, extraction.lift)
+        extraction_effect(extraction, 0, retract)
         if retract == 1 then self.extraction = nil end
     end
     tip_pose(self, pose.x, pose.y, pose.z, pose.w)
