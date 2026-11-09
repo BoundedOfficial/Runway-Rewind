@@ -2,7 +2,10 @@
   "name": "runway-rewind-html5-checks",
   "version": "1.0.0",
   "private": true,
-  "scripts": { "test": "node launch.cjs" },
+  "scripts": {
+    "test": "node launch.cjs",
+    "test:lifecycle": "node lifecycle.cjs"
+  },
   "devDependencies": {
     "playwright-core": "1.58.2",
     "pngjs": "7.0.0"

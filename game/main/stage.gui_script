@@ -10,6 +10,35 @@ local function box(x, y, width, height)
     return gui.new_box_node(vmath.vector3(x, y, 0), vmath.vector3(width, height, 0))
 end
 
+local function reset_stage(self)
+    self.runner, self.started = nil, false
+    gui.set_enabled(self.prompt, true)
+    gui.set_enabled(self.label, false)
+    gui.set_enabled(self.tool, false)
+    msg.post("@render:", "reset_portrait", { completed = {} })
+end
+
+local function synchronize_platform(self)
+    local state = platform.state()
+    if state.audio_enabled ~= self.audio_enabled then
+        sound.set_group_gain("master", state.audio_enabled and 1 or 0)
+        self.audio_enabled = state.audio_enabled
+    end
+    if state.pause_count ~= self.pause_count then
+        self.pause_count = state.pause_count
+        self.pressed = false
+        self.skip_input = true
+        if self.runner then runner.cancel(self.runner, true) end
+    end
+    if state.restart_count ~= self.restart_count and not state.paused then
+        self.restart_count = state.restart_count
+        self.pressed = false
+        self.skip_input = true
+        reset_stage(self)
+    end
+    return state.paused
+end
+
 function init(self)
     self.prompt = box(320, 72, 218, 54)
     gui.set_color(self.prompt, vmath.vector4(1, 0.92, 0.84, 1))
@@ -17,15 +46,16 @@ function init(self)
     gui.set_parent(label, self.prompt)
     gui.set_font(label, "prompt")
     gui.set_color(label, vmath.vector4(0.26, 0.13, 0.16, 1))
+    self.label = gui.new_text_node(vmath.vector3(320, 922, 0), "")
+    gui.set_font(self.label, "prompt")
+    gui.set_color(self.label, vmath.vector4(1, 0.92, 0.84, 1))
+    gui.set_enabled(self.label, false)
+    self.tool = box(0, 0, 118, 118)
+    gui.set_texture(self.tool, "tools")
+    gui.set_enabled(self.tool, false)
+    self.pause_count, self.restart_count = 0, 0
     msg.post(".", "acquire_input_focus")
-    window.set_listener(function(_, event)
-        if event == window.WINDOW_EVENT_FOCUS_LOST then
-            self.pressed = false
-            if self.runner then
-                runner.cancel(self.runner, true)
-            end
-        end
-    end)
+    platform.listen_for_editor_focus()
 end
 
 function update(self, dt)
@@ -36,24 +66,24 @@ function update(self, dt)
         -- Allow the stage to draw before reporting that it is interactive.
         self.report_ready = true
     end
-    self.paused = platform.state().paused
-    if self.paused then self.pressed = false end
+    if synchronize_platform(self) then return end
+    -- Discard the first tick's accumulated wall time and pending engine input.
+    if self.skip_input then
+        self.skip_input = false
+        return
+    end
     if self.runner then
-        if self.paused then
-            runner.cancel(self.runner)
-        else
-            local completed = runner.update(self.runner, dt)
-            if completed then
-                msg.post(".", "treatment_completed", { treatment = completed })
-            end
+        local completed = runner.update(self.runner, dt)
+        if completed then
+            msg.post(".", "treatment_completed", { treatment = completed })
         end
     end
 end
 
 function on_input(self, action_id, action)
+    if synchronize_platform(self) or self.skip_input then return true end
     if self.runner then
-        if (action_id == POINTER or not action_id) and action.x and action.y and
-                (not self.paused or action.released) then
+        if (action_id == POINTER or not action_id) and action.x and action.y then
             runner.input(self.runner, action.x, artwork.height - action.y,
                 action.pressed, action.released, action_id == POINTER)
         end
@@ -62,11 +92,6 @@ function on_input(self, action_id, action)
     if action_id ~= POINTER then
         return
     end
-    if platform.state().paused then
-        self.pressed = false
-        return
-    end
-
     local over_prompt = gui.pick_node(self.prompt, action.x, action.y)
     if action.pressed then
         self.pressed = over_prompt
@@ -77,13 +102,9 @@ function on_input(self, action_id, action)
         if start then
             self.started = true
             gui.set_enabled(self.prompt, false)
-            local label = gui.new_text_node(vmath.vector3(320, 922, 0), "")
-            gui.set_font(label, "prompt")
-            gui.set_color(label, vmath.vector4(1, 0.92, 0.84, 1))
-            local tool = box(0, 0, 118, 118)
-            gui.set_texture(tool, "tools")
+            gui.set_enabled(self.label, true)
             -- Focused entry starts with the preceding extraction treatment settled.
-            self.runner = runner.start(cleansing, label, tool, { completed = artwork.extraction })
+            self.runner = runner.start(cleansing, self.label, self.tool, { completed = artwork.extraction })
             msg.post(".", MAKEOVER_STARTED)
             return true
         end
