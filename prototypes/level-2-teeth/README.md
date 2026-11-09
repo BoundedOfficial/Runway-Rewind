@@ -16,8 +16,8 @@ Open http://127.0.0.1:5175/. No dependencies or build step. The game uses mouse 
 
 ## Treatments
 
-1. Tweezers: hold and pull twelve food remnants free.
-2. Tweezers: hold and pull four animated worms free.
+1. Tweezers: hold and pull nine food remnants free, then drop them in the collection dish.
+2. Tweezers: hold and pull four animated worms free, then drop them in the separate worm compartment.
 3. Scaler: scrape away the heavy tartar crust.
 4. Handpiece: hold over tight gaps to break down deposits.
 5. Floss pick: sweep between teeth.
@@ -31,10 +31,10 @@ Dental actions and worms are fictional makeover gameplay, not dental-care instru
 
 ## Artwork and interaction
 
-The built-in image-generation tool created the registered clean/dirty mouth plates, nine-tool sheet, food cutouts, and six-frame worm loop. Prompts are retained in `assets/prompts.json`. Food and worms are independent sprites; only the grabbed object moves. Worms wriggle with staggered frame timing and stretch slightly when pulled. Warm lighting, transparent edges, and restrained shadows keep the objects consistent with the mouth artwork.
+The built-in image-generation tool created the registered clean/dirty mouth plates, nine-tool sheet, food cutouts, and six-frame worm loop. Prompts are retained in `assets/prompts.json` and `assets/revision-prompts.json`. The revision adds registered descaled/polished plates and a transparent treatment sheet containing the two-compartment dish, deposits, fibers, paste, foam, and mouthwash. Food and worms are independent sprites; only the grabbed object moves. Worms wriggle with staggered frame timing and stretch slightly when pulled. Warm lighting, transparent edges, and restrained shadows keep the objects consistent with the mouth artwork.
 
-The canvas uses a 640 × 960 stage and a fixed close-up camera. Brush strokes erase a separate dirty canvas. Treatments have independent progress; transition time prevents an accidental input from affecting the next treatment. Browser blur and pointer cancellation release held objects. The final reveal uses the clean registered plate, not a freshly generated different mouth.
+The canvas uses a 640 × 960 stage and a fixed close-up camera. Reserved worm bounds are checked against every food spawn, with padding. Extracted items only count after release over the forgiving collection dish; releasing elsewhere returns them to their original position. Separate dish slots keep collected food and worms apart. Brush strokes reveal registered treatment plates through an alpha mask. Treatments have independent progress; transition time prevents an accidental input from affecting the next treatment. Browser blur and pointer cancellation release held objects. Scraping reveals the generated yellow descaled plate; flossing removes generated fibers and reveals ivory enamel; paste becomes generated foam; suction clears it; generated mouthwash swishes and drains; polishing reveals the registered pearl-white plate. Treatment sprites replace the procedural paste, foam, water, sparkles, and particle circles.
 
 ## Playthrough observations
 
-The ten-stage mouse playthrough reached the finished smile through actual pointer inputs. Phone-size before, held-tool, and final states were visually inspected at 390 × 844. The generated worms and food replace the initial procedural drawings following user feedback. Physical-device feel and desired shock level remain for user review.
+The ten-stage mouse playthrough reached the finished smile through actual pointer inputs. Phone-size before, held-tool, and final states were visually inspected at 390 × 844. The generated worms and food replace the initial procedural drawings following user feedback. The revised sequence also completed all ten treatments through mouse input; emulated touch collected both food and worms in the dish. The spacing guard passed, and the generated effects sheet contains transparent pixels. Physical-device feel and desired shock level remain for user review.
