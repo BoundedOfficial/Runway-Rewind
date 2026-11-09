@@ -1,6 +1,6 @@
 # Defold game
 
-The game starts on the dirty Level 1 portrait. **Start makeover** introduces the extractor. Pick it up and guide its tip over each of the fourteen pimples. The next tools arrive in order for cleansing cream, face and neck wiping, robe cleanup, eyebrow shaving, lip scrub, and hydration. Foundation, brow fill, eye makeup, blush and contour, crimson lipstick, and hair styling complete the makeover. After the finished portrait reveal, **Replay** returns to the dirty portrait and **Next** opens the end-of-content screen.
+A fresh Level 1 run opens on the dirty portrait. **Start makeover** introduces the extractor. Pick it up and guide its tip over each of the fourteen pimples. The next tools arrive in order for cleansing cream, face and neck wiping, robe cleanup, eyebrow shaving, lip scrub, and hydration. Foundation, brow fill, eye makeup, blush and contour, crimson lipstick, and hair styling complete the makeover. After the finished portrait reveal, **Replay** returns to the dirty portrait and **Next** opens the end-of-content screen.
 
 ## Windows host setup
 
@@ -44,7 +44,17 @@ Set `CHROME_PATH` to use a different Chrome executable. Set `STAGE_EVIDENCE_DIR`
 
 Run `npm run test:lifecycle --prefix game/tests` for the focused pause check. To check a release build, pass its bundle directory followed by `--release`. The check verifies the frozen frame and suspended WebGL drawing during tool arrival, partial cream retention with mouse and simulated touch, and development control visibility.
 
+Run `npm run test:persistence --prefix game/tests -- "<bundle directory>"` on a preview built without a fixture. The check exercises standalone local storage and controlled Bridge responses, including a rejected read, a slow first read, a rejected write, and Replay while a completion save is pending. It checks the visible result after reload. Set `STAGE_EVIDENCE_DIR` to capture the restored stage and portrait.
+
 On 2026-11-09 the Windows host built the Wasm preview with Bob 1.14.0. Chrome 156.0.8078.81 over loopback verified the portrait, Start prompt, `GAME_READY`, same-origin requests, and the seven skincare treatments with mouse input and simulated touch. The check covers an unheld portrait tap, a fast continuous stroke, release and return, automatic handoff with a held pointer, individual pimples, independent robe and eyebrow regions, and loose hair across cleaned fabric. Pixel checks compare feathered cream and lip scrub edges with the authored clean result. Bob returned success with a Windows temporary-directory cleanup warning.
+
+## Saved makeovers
+
+Level 1 stores a versioned record at `runway-rewind.level-1` with the level ID, number of completed treatments, and completion state. The runner rebuilds the portrait from that boundary. A returning player resumes at the next treatment or sees the finished portrait with Replay and Next. Partial strokes start over on reload. Replay and confirmed development restart both save a fresh run.
+
+The stage waits up to 1.5 seconds for its initial read. A failed or slow read leaves the current visit playable and holds writes until the previous record is known. Recovery preserves the active portrait and any higher saved progress. Replay explicitly replaces known progress. An unsupported record stays intact. Reads and writes retry after failures, and the newest pending milestone waits for any earlier write to finish.
+
+Standalone previews use browser local storage for the current origin. Release targets use Bridge storage. For these targets, `storage.get(key, false)` must return a raw record string or `null` after a successful cloud read. The compatibility layer must propagate unavailable storage and rejected reads and writes. In Bridge 2.4.1, `StorageModule` otherwise catches cloud errors and falls back to local data, including reading an empty key or reporting a local write as successful. Its cloud read can also migrate local values into the cloud. YouTube's adapter additionally treats malformed `loadData()` JSON as empty. Release checks must drive both adapters through the actual bundled Bridge with rejected reads and writes and verify that local fallback does not authorize an overwrite or swallow a failed write. The focused preview check controls Bridge responses directly.
 
 ## Portrait and treatment interfaces
 
