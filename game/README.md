@@ -29,7 +29,7 @@ The build imports the starting portrait, authored layers, and tool sprites from 
 
 The project has no Defold libraries, native extensions, or custom app manifests. The build script checks for them and pins Bob's build-server endpoint to unused loopback. Bob compiles game resources locally and bundles its shipped `wasm-web` engine. Its Java HTTP client requires access to a local loopback socket, even for the stock engine build. Setup downloads upstream binaries and JavaScript once. Building and serving the bundle use the host.
 
-The HTML5 shell paints its loading state, initializes the pinned Bridge, then loads the Defold archive and engine. Once Defold has drawn the interactive stage, `platform.stage_ready()` sends Bridge `GAME_READY` once. The Lua platform module reads pause and audio flags through the JavaScript adapter. That same adapter owns async storage reads and writes via Bridge. Save restoration, in-game pausing, and platform-specific configuration belong to the later gameplay and packaging work.
+The HTML5 shell paints its loading state, initializes the pinned Bridge, then loads the Defold archive and engine. Once Defold has drawn the interactive stage, `platform.stage_ready()` sends Bridge `GAME_READY` once. The JavaScript adapter uses Bridge pause and audio events, including its standalone focus handling. It suspends the Defold frame loop while paused, leaving browser event handlers available to resume. The stage cancels the previous drag and discards the first resumed tick before taking new input. Development builds show Pause/Resume and Restart makeover. Confirming restart returns to the dirty portrait and Start prompt.
 
 The SDK is delivered as a separate, unmodified JavaScript file. See the included [third-party notice](web/wasm-web/licenses/Playgama-Bridge-NOTICE.txt) for its source and license.
 
@@ -41,6 +41,8 @@ npm test --prefix game/tests
 ```
 
 Set `CHROME_PATH` to use a different Chrome executable. Set `STAGE_EVIDENCE_DIR` to save canvas PNGs from startup, tool use, and partial and settled skincare. Pass an alternate bundle directory to the check using `npm test --prefix game/tests -- "<bundle directory>"`.
+
+Run `npm run test:lifecycle --prefix game/tests` for the focused pause check. To check a release build, pass its bundle directory followed by `--release`. The check verifies the frozen frame and suspended WebGL drawing during tool arrival, partial cream retention with mouse and simulated touch, and development control visibility.
 
 On 2026-11-09 the Windows host built the Wasm preview with Bob 1.14.0. Chrome 156.0.8078.81 over loopback verified the portrait, Start prompt, `GAME_READY`, same-origin requests, and the seven skincare treatments with mouse input and simulated touch. The check covers an unheld portrait tap, a fast continuous stroke, release and return, automatic handoff with a held pointer, individual pimples, independent robe and eyebrow regions, and loose hair across cleaned fabric. Pixel checks compare feathered cream and lip scrub edges with the authored clean result. Bob returned success with a Windows temporary-directory cleanup warning.
 

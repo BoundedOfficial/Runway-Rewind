@@ -11,6 +11,7 @@
     #app-container { position: absolute; overflow: hidden; }
     #canvas { display: block; width: 100%; outline: none; touch-action: none; }
     #game-loading { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; color: #232d22; font: 1rem system-ui, sans-serif; }
+    #development-controls { position: fixed; top: 8px; right: 8px; display: flex; gap: 4px; }
   </style>
 </head>
 <body>
@@ -29,6 +30,8 @@
     CUSTOM_PARAMETERS.unsupported_webgl_callback = () => {
       loading.textContent = "WebGL is required to play Runway Rewind.";
     };
+    const resizeGame = CUSTOM_PARAMETERS.resize_window_callback;
+    CUSTOM_PARAMETERS.resize_window_callback = () => runwayPlatform.resize(resizeGame);
     runwayPlatform.initialize().then(() => EngineLoader.load("canvas", "{{exe-name}}"));
   </script>
 </body>
