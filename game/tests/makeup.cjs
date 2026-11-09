@@ -34,18 +34,19 @@ function crimson(image, [left, top, right, bottom]) {
   return count;
 }
 
-async function checkMakeup(browser, url, input) {
-  const page = await browser.newPage({
+async function checkMakeup(browser, url, input, release) {
+  const page = release?.page ?? await browser.newPage({
     viewport: { width: 640, height: 960 },
     hasTouch: input === 'touch',
   });
+  const milestone = release?.milestone ?? (async () => {});
   try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => {
       if (message.type() === 'error' || /ERROR:/.test(message.text())) errors.push(message.text());
     });
-    await page.goto(url);
+    if (!release) await page.goto(url);
     const canvas = page.locator('canvas');
     const stage = await canvas.boundingBox();
     const session = input === 'touch' && await page.context().newCDPSession(page);
@@ -89,16 +90,18 @@ async function checkMakeup(browser, url, input) {
       }
       return PNG.sync.read(bytes);
     }
-    await page.waitForFunction(() => window.bridge?.isInitialized);
-    const deadline = Date.now() + 10000;
-    let startup;
-    do {
-      startup = await snapshot();
-    } while (startup.data[(878 * startup.width + 320) * 4] < 244 && Date.now() < deadline);
-    assert.ok(startup.data[(878 * startup.width + 320) * 4] >= 244, 'Start makeover appears');
-    await down(320, 888);
-    await up();
-    await wait(600);
+    if (!release) {
+      await page.waitForFunction(() => window.bridge?.isInitialized);
+      const deadline = Date.now() + 10000;
+      let startup;
+      do {
+        startup = await snapshot();
+      } while (startup.data[(878 * startup.width + 320) * 4] < 244 && Date.now() < deadline);
+      assert.ok(startup.data[(878 * startup.width + 320) * 4] >= 244, 'Start makeover appears');
+      await down(320, 888);
+      await up();
+      await wait(600);
+    }
 
     const before = await snapshot('completed-skincare');
     await down(320, 828);
@@ -124,6 +127,7 @@ async function checkMakeup(browser, url, input) {
     ]);
     await wait(1350);
     const foundation = await snapshot('foundation-settled');
+    await milestone(8);
     assert.ok(changed(before, foundation, [228, 225, 405, 285]) > 1000,
       'Foundation visibly covers the face as well as the neck');
     assert.equal(changed(before, foundation, [12, 20, 130, 210]), 0,
@@ -142,6 +146,7 @@ async function checkMakeup(browser, url, input) {
       [462, 325], [462, 301], [332, 301]]);
     await wait(1350);
     const brows = await snapshot('both-brow-tails-settled');
+    await milestone(9);
     await down(320, 828);
     await sweep([[114, 735], [148, 385], [186, 353], [243, 353]], 1.18, 410);
     await snapshot('held-eye-brush');
@@ -161,6 +166,7 @@ async function checkMakeup(browser, url, input) {
     ], 1.18, 410);
     await wait(1350);
     const eyes = await snapshot('combined-eyes-settled');
+    await milestone(10);
 
     await stroke([[130, 726], [133, 467], [193, 442], [264, 421], [264, 446]]);
     await wait(400);
@@ -180,6 +186,7 @@ async function checkMakeup(browser, url, input) {
 
     await wait(1100);
     const lipstickReady = await snapshot('blush-and-contour-settled');
+    await milestone(11);
     await stroke([[196, 725], [197, 534], [259, 523], [288, 515]], 1.12, 490);
     await wait(350);
     const partialLip = await snapshot('partial-lipstick-close-up');
@@ -201,9 +208,10 @@ async function checkMakeup(browser, url, input) {
       'The lipstick treatment settles into crimson across the lips');
     assert.equal(changed(eyes, finished, backdrop), 0,
       'The stage returns to the full portrait with the backdrop intact');
+    await milestone(12);
     assert.deepEqual(errors, []);
   } finally {
-    await page.close();
+    if (!release) await page.close();
   }
 }
 
@@ -229,7 +237,9 @@ async function main() {
   }
 }
 
-main().catch(error => {
+module.exports = { checkMakeup };
+
+if (require.main === module) main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });

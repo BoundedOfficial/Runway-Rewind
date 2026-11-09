@@ -9,15 +9,15 @@ const { preview } = require('../scripts/serve.cjs');
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const evidence = process.env.STAGE_EVIDENCE_DIR;
 
-async function play(browser, url, viewport, input, check) {
-  const page = await browser.newPage({ viewport, hasTouch: input === 'touch' });
+async function play(browser, url, viewport, input, check, readyPage) {
+  const page = readyPage ?? await browser.newPage({ viewport, hasTouch: input === 'touch' });
   try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => {
       if (message.type() === 'error' || /ERROR:/.test(message.text())) errors.push(message.text());
     });
-    await page.goto(url);
+    if (!readyPage) await page.goto(url);
     await page.locator('#game-loading').waitFor({ state: 'hidden' });
     const stage = await page.locator('canvas').boundingBox();
     const scale = Math.min(stage.width / 640, stage.height / 960);
@@ -63,7 +63,7 @@ async function play(browser, url, viewport, input, check) {
     await check({ down, move, up, snapshot, stage, viewport });
     assert.deepEqual(errors, []);
   } finally {
-    await page.close();
+    if (!readyPage) await page.close();
   }
 }
 
@@ -197,7 +197,9 @@ async function main() {
   }
 }
 
-main().catch(error => {
+module.exports = { play, checkProgress, checkGuidance, checkViewport };
+
+if (require.main === module) main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });
