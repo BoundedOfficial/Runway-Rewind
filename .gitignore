@@ -1,3 +1,16 @@
 node_modules/
 *.log
-.prototype/**/test-results/
+
+/.scratch/
+/game/build/
+/game/.internal/
+/game/.editor_settings/
+/game/assets/dirty.png
+/game/assets/generated/
+/game/web/wasm-web/playgama-bridge.js
+
+# Local reference package and image-generation experiments
+/*.xapk
+/output/
+/game/artwork/**/assets/gallery.html
+/game/artwork/**/assets/layer-map.csv

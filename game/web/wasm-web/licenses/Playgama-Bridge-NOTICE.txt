@@ -1,0 +1,12 @@
+Playgama Bridge 2.4.1
+Copyright Playgama
+Licensed under the GNU Lesser General Public License, version 3 or later.
+
+Unmodified upstream JavaScript:
+https://github.com/Playgama/bridge/releases/tag/v2.4.1
+
+Corresponding source:
+https://github.com/Playgama/bridge/tree/v2.4.1
+
+The accompanying Playgama-Bridge-LGPL-3.0.txt and GPL-3.0.txt
+contain the license texts.

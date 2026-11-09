@@ -1,0 +1,4 @@
+material: "/portrait/layer.material"
+vertices: "/portrait/quad.buffer"
+primitive_type: PRIMITIVE_TRIANGLES
+position_stream: "position"

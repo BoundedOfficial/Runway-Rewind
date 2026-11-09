@@ -1,0 +1,11 @@
+{
+  "regions": ["foundation", "brow-L", "brow-R", "eye-look-L", "eye-look-R",
+              "blush-L", "blush-R", "contour-L", "contour-R", "lipstick"],
+  "tools": {
+    "foundation-sponge": 7,
+    "brow-brush": 10,
+    "eye-brush": 11,
+    "blush-brush": 14,
+    "lipstick-bullet": 15
+  }
+}

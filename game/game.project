@@ -1,0 +1,23 @@
+[project]
+title = Runway Rewind
+version = 0.1.0
+bundle_resources = /web
+custom_resources = assets/generated/regions.json
+
+[bootstrap]
+main_collection = /main/main.collectionc
+render = /portrait/portrait.renderc
+
+[display]
+width = 640
+height = 960
+
+[input]
+game_binding = /input/game.input_bindingc
+
+[html5]
+htmlfile = /web/index.html
+scale_mode = fit
+show_fullscreen_button = 0
+show_made_with_defold = 0
+wasm_streaming = 1

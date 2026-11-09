@@ -1,0 +1,16 @@
+#version 140
+
+in highp vec4 position;
+out highp vec2 uv;
+
+uniform vertex_uniforms
+{
+    highp mat4 view_proj;
+    highp vec4 rect;
+};
+
+void main()
+{
+    uv = position.xy;
+    gl_Position = view_proj * vec4(rect.xy + uv * rect.zw, 0.0, 1.0);
+}

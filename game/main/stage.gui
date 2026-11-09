@@ -1,0 +1,15 @@
+script: "/main/stage.gui_script"
+fonts {
+  name: "prompt"
+  font: "/main/prompt.font"
+}
+textures {
+  name: "tools"
+  texture: "/assets/generated/tools.atlas"
+}
+materials {
+  name: "target_guide"
+  material: "/main/target_guide.material"
+}
+material: "/builtins/materials/gui.material"
+max_nodes: 48

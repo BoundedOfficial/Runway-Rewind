@@ -1,0 +1,9 @@
+images { image: "/assets/pimple-pop/frame-01.png" }
+images { image: "/assets/pimple-pop/frame-02.png" }
+images { image: "/assets/pimple-pop/frame-03.png" }
+images { image: "/assets/pimple-pop/frame-04.png" }
+images { image: "/assets/pimple-pop/frame-05.png" }
+images { image: "/assets/pimple-pop/frame-06.png" }
+images { image: "/assets/pimple-pop/frame-07.png" }
+images { image: "/assets/pimple-pop/frame-08.png" }
+extrude_borders: 2

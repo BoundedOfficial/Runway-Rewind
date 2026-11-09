@@ -1,0 +1,16 @@
+name: "main"
+embedded_instances {
+  id: "stage"
+  data: "components {\n"
+  "  id: \"stage\"\n"
+  "  component: \"/main/stage.gui\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"portrait_quad\"\n"
+  "  component: \"/portrait/quad.mesh\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"portrait_atlas\"\n"
+  "  component: \"/portrait/atlas.script\"\n"
+  "}\n"
+}

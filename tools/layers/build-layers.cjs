@@ -4,7 +4,7 @@ const fs=require('node:fs'),path=require('node:path');
 const levelDirectory=process.argv[2];
 if(!levelDirectory||process.argv.length!==3){console.error('Usage: node build-layers.cjs <level-directory>');process.exit(1);}
 const root=path.resolve(levelDirectory),out=path.join(root,'assets/layers');
-for(const required of ['authoring/layers.json','assets/plates','src']){if(!fs.existsSync(path.join(root,required))){console.error('Missing level input: '+path.join(root,required));process.exit(1);}}
+for(const required of ['authoring/layers.json','assets/plates']){if(!fs.existsSync(path.join(root,required))){console.error('Missing level input: '+path.join(root,required));process.exit(1);}}
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright-core');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
@@ -35,7 +35,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright-core');
  },urls);
  fs.mkdirSync(out,{recursive:true});const manifest=[];
  for(const {png,maskPng,...d} of result){if(!d.cells.length)throw Error('Empty hit mask '+d.id);fs.writeFileSync(path.join(out,d.id+'.png'),Buffer.from(png,'base64'));fs.writeFileSync(path.join(out,d.id+'.mask.png'),Buffer.from(maskPng,'base64'));manifest.push({...d,image:'assets/layers/'+d.id+'.png',mask:'assets/layers/'+d.id+'.mask.png'});}
- fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify(manifest,null,2));fs.writeFileSync(path.join(root,'src/sprites.js'),'// Original registered raster sprites and independent hit masks.\nwindow.ROSE_SPRITES='+JSON.stringify(manifest)+';\n');
+ fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify(manifest,null,2));
  console.log(`Built ${manifest.length} transparent artwork sprites + ${manifest.length} masks from active registered character plates.`);
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

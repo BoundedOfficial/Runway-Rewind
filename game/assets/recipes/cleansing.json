@@ -1,0 +1,12 @@
+{
+  "regions": ["extract-*", "cream-*", "clean-*", "robe-*", "brow-clean-*", "scrub", "hydrated-lips"],
+  "tools": {
+    "extractor": 0,
+    "fabric-pad": 1,
+    "cream-spatula": 2,
+    "cotton-wipe": 3,
+    "eyebrow-razor": 4,
+    "lip-scrub-brush": 5,
+    "lip-sponge": 6
+  }
+}

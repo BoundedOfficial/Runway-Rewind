@@ -1,0 +1,6 @@
+{
+  "regions": ["style-L", "style-R"],
+  "tools": {
+    "styling-brush": "plates/10-hairbrush.png"
+  }
+}
