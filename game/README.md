@@ -1,6 +1,6 @@
 # Defold game
 
-The game starts on the dirty Level 1 portrait. **Start makeover** introduces the extractor. Pick it up and guide its tip over each of the fourteen pimples. The tools then arrive in order for cleansing cream, face and neck wiping, robe cleanup, eyebrow shaving, lip scrub, and hydration.
+The game starts on the dirty Level 1 portrait. **Start makeover** introduces the extractor. Pick it up and guide its tip over each of the fourteen pimples. The next tools arrive in order for cleansing cream, face and neck wiping, robe cleanup, eyebrow shaving, lip scrub, and hydration. Foundation, brow fill, eye makeup, blush and contour, crimson lipstick, and hair styling complete the makeover. After the finished portrait reveal, **Replay** returns to the dirty portrait and **Next** opens the end-of-content screen.
 
 ## Windows host setup
 
@@ -23,7 +23,7 @@ The setup script verifies the SHA-256 of each upstream download before use.
 | [Playgama Bridge](https://github.com/Playgama/bridge/releases/tag/v2.4.1) | 2.4.1 | JavaScript SDK served with the game |
 | [Playwright Core](https://www.npmjs.com/package/playwright-core/v/1.58.2) and [PNGJS](https://www.npmjs.com/package/pngjs/v/7.0.0) | 1.58.2 and 7.0.0 | Host-only Chrome smoke check |
 
-The build imports the starting portrait, authored layers, and tool sprites from `.prototype/Level 1/v1/assets/` and stages the checked Bridge download as a bundle resource. Artwork recipes in `game/assets/recipes/` select authored region IDs or wildcard patterns and map tool names to cells of the 4-by-4 tool sheet. The build generates Defold atlases and imports the original hit cells in `game/assets/generated/`. Open `game/game.project` in the matching Defold editor after preparing the artwork with the build script.
+The build imports the starting portrait, authored layers, and tool sprites from `.prototype/Level 1/v1/assets/` and stages the checked Bridge download as a bundle resource. Artwork recipes in `game/assets/recipes/` select authored region IDs or wildcard patterns and map tool names to cells of the 4-by-4 tool sheet or to standalone images. The build generates Defold atlases and imports the original hit cells in `game/assets/generated/`. Open `game/game.project` in the matching Defold editor after preparing the artwork with the build script.
 
 ## Build audit
 
@@ -64,9 +64,25 @@ The check exercises foundation, full brow arches, the combined eye look, blush
 and contour, and crimson lipstick with mouse and simulated touch. Set
 `STAGE_EVIDENCE_DIR` to capture the makeup stages.
 
+### Finish fixture
+
+The debug finish fixture starts at hair styling with the first twelve
+treatments completed. It checks the independent compact styling targets,
+preservation of the eyes, lips, and clean robe, and the finished portrait hold.
+Mouse input follows Next through the end-of-content screen to Replay.
+Simulated touch selects Replay from the finished portrait. Both routes
+restore the dirty portrait and allow the first pimple to be treated again.
+Set `STAGE_EVIDENCE_DIR` to capture the partial and finished portrait and
+end-of-content screen.
+
+```powershell
+./game/scripts/build-html5.ps1 -Fixture finish -BundleOutput .scratch/finish
+node game/tests/finish.cjs ".scratch/finish/Runway Rewind"
+```
+
 ### Runner and renderer
 
-`treatments/runner.lua` consumes ordered treatment definitions. Each continuous treatment supplies an ID, ordered authored region IDs, brush radius, and tool artwork with its tip anchor. Extraction supplies `target_radius` instead of a brush radius and settles the nearest authored target under the held tip. The runner handles input and timing and reports the committed treatment ID once through the stage's `treatment_completed` message. The stage suspends runner updates during pause and calls `runner.cancel` to break a held stroke. The runner accepts completed artwork IDs when rebuilding the starting portrait, with optional separate transient artwork IDs when resuming at the matching removal treatment.
+`treatments/runner.lua` consumes the ordered definitions in `treatments/level_one.lua`. Each continuous treatment supplies an ID, ordered authored region IDs, brush radius, and tool artwork with its tip anchor. Extraction supplies `target_radius` instead of a brush radius and settles the nearest authored target under the held tip. The runner handles input and timing and reports the committed treatment ID once through the stage's `treatment_completed` message. The stage suspends runner updates during pause and calls `runner.cancel` to break a held stroke. Starting at a later treatment reconstructs the portrait from the preceding treatment definitions and restores temporary products before their removal treatment. Replay and development restart share the stage reset path, which emits `makeover_reset`.
 
 An optional `camera` on a treatment sets the scale and center in the artwork's
 top-left coordinates. Framing eases during tool arrival. The runner maps the

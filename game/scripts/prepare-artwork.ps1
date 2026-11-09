@@ -34,17 +34,26 @@ $sheet = [Drawing.Bitmap]::new((Join-Path $source 'tools.png'))
 $toolAtlas = [Collections.Generic.List[string]]::new()
 try {
     foreach ($tool in $tools.GetEnumerator()) {
-        $cellWidth = $sheet.Width / 4
-        $cellHeight = $sheet.Height / 4
-        $col = $tool.Value % 4
-        $row = [Math]::Floor($tool.Value / 4)
-        $bounds = [Drawing.Rectangle]::FromLTRB(
-            [Math]::Floor($col * $cellWidth), [Math]::Floor($row * $cellHeight),
-            [Math]::Floor(($col + 1) * $cellWidth), [Math]::Floor(($row + 1) * $cellHeight))
-        $icon = $sheet.Clone($bounds, [Drawing.Imaging.PixelFormat]::Format32bppArgb)
-        try {
-            $icon.Save((Join-Path $generated "$($tool.Key).png"), [Drawing.Imaging.ImageFormat]::Png)
-        } finally { $icon.Dispose() }
+        $destination = Join-Path $generated "$($tool.Key).png"
+        if ($tool.Value -is [string]) {
+            $original = [Drawing.Bitmap]::new((Join-Path $source $tool.Value))
+            try {
+                $icon = [Drawing.Bitmap]::new($original, [int]($sheet.Width / 4), [int]($sheet.Height / 4))
+                try { $icon.Save($destination, [Drawing.Imaging.ImageFormat]::Png) }
+                finally { $icon.Dispose() }
+            } finally { $original.Dispose() }
+        } else {
+            $cellWidth = $sheet.Width / 4
+            $cellHeight = $sheet.Height / 4
+            $col = $tool.Value % 4
+            $row = [Math]::Floor($tool.Value / 4)
+            $bounds = [Drawing.Rectangle]::FromLTRB(
+                [Math]::Floor($col * $cellWidth), [Math]::Floor($row * $cellHeight),
+                [Math]::Floor(($col + 1) * $cellWidth), [Math]::Floor(($row + 1) * $cellHeight))
+            $icon = $sheet.Clone($bounds, [Drawing.Imaging.PixelFormat]::Format32bppArgb)
+            try { $icon.Save($destination, [Drawing.Imaging.ImageFormat]::Png) }
+            finally { $icon.Dispose() }
+        }
         $toolAtlas.Add("images { image: `"/assets/generated/$($tool.Key).png`" }")
     }
 } finally { $sheet.Dispose() }

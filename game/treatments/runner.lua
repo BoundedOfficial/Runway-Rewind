@@ -66,10 +66,22 @@ local function begin(self, index)
     frame_during_transition(self, treatment.camera)
 end
 
-function M.start(sequence, label, tool_node, portrait)
+function M.start(sequence, label, tool_node, first_unfinished)
     local self = { sequence = sequence, label = label, tool_node = tool_node, camera = DEFAULT_CAMERA }
+    local portrait = { completed = {} }
+    for i = 1, first_unfinished - 1 do
+        local treatment = sequence[i]
+        if treatment.transient then
+            portrait.transient = treatment.regions
+        else
+            for _, id in ipairs(treatment.regions) do
+                portrait.completed[#portrait.completed + 1] = id
+            end
+            if treatment.removes_transient then portrait.transient = nil end
+        end
+    end
     msg.post(RENDER, "reset_portrait", portrait)
-    begin(self, 1)
+    begin(self, first_unfinished)
     return self
 end
 
@@ -216,6 +228,7 @@ function M.update(self, dt)
         end
     elseif state == "exiting" then
         begin(self, self.index + 1)
+        return nil, self.state == "finished"
     else
         self.state = "ready"
     end

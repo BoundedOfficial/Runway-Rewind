@@ -3,7 +3,7 @@ param(
     [string]$Variant = 'debug',
     [string]$Toolchain = (Join-Path $PSScriptRoot '../../.scratch/toolchain'),
     [string]$BundleOutput = (Join-Path $PSScriptRoot '../../.scratch/html5'),
-    [ValidateSet('makeup')]
+    [ValidateSet('makeup', 'finish')]
     [string]$Fixture
 )
 
