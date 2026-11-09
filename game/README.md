@@ -146,8 +146,9 @@ and contour, and crimson lipstick with mouse and simulated touch. Set
 ### Finish fixture
 
 The debug finish fixture starts at hair styling with the first twelve
-treatments completed. It checks the independent compact styling targets,
-preservation of the eyes, lips, and clean robe, and the finished portrait hold.
+treatments completed. It checks brushing the loose hair and crown, progress
+on each side, preservation of the eyes, lips, and clean robe, and the
+finished portrait hold.
 Mouse input follows Next through the end-of-content screen to Replay.
 Simulated touch selects Replay from the finished portrait. Both routes
 restore the dirty portrait and allow the first pimple to be treated again.
@@ -172,4 +173,7 @@ authored positions until individually completed, including under eye/lip
 framing. Picking up the tool emphasizes the markers and shows its working
 radius; releasing hides that cursor without hiding the remaining targets.
 
-`portrait/portrait.render_script` uses a 640-by-960 committed target and cropped reveal targets. Each eligible pointer segment draws an analytic soft brush into the corresponding target. Independent sampled hit cells govern completion, and the remaining region fades in smoothly. The renderer multiplies the already feathered atlas artwork by reveal coverage once and composites it with premultiplied blending. For temporary products such as cream, it retains the pre-product portrait and builds the wipe result on that surface. The wipe reveals the clean result under the brush, and the committed surface switches to it after all regions settle.
+Hair styling counts brush travel over the loose hair on each side. Each side
+gradually fades into its styled artwork and settles after a few strokes.
+
+`portrait/portrait.render_script` uses a 640-by-960 committed target and cropped reveal targets. For local reveals, each eligible pointer segment draws an analytic soft brush into the corresponding target. Independent sampled hit cells govern completion, and the remaining region fades in smoothly. The renderer multiplies the already feathered atlas artwork by reveal coverage once and composites it with premultiplied blending. For temporary products such as cream, it retains the pre-product portrait and builds the wipe result on that surface. The wipe reveals the clean result under the brush, and the committed surface switches to it after all regions settle.

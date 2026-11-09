@@ -103,8 +103,52 @@ function M.start(sequence, hud, tool_node, first_unfinished)
     return self
 end
 
+local function within_ranges(ranges, x, y)
+    for i = 2, #ranges do
+        local from, to = ranges[i - 1], ranges[i]
+        if y >= from[1] and y <= to[1] then
+            local t = (y - from[1]) / (to[1] - from[1])
+            local left = from[2] + t * (to[2] - from[2])
+            local right = from[3] + t * (to[3] - from[3])
+            return x >= left and x < right
+        end
+    end
+    return false
+end
+
+local function brush_sweep(self, ax, ay, dx, dy)
+    local sweep = self.treatment.sweep
+    local distance = math.sqrt(dx * dx + dy * dy)
+    local samples = math.ceil(distance / 12)
+    local step = distance / samples
+    for index, region in ipairs(self.regions) do
+        if not region.settle then
+            local travel = region.travel or 0
+            for sample = 1, samples do
+                local t = (sample - 0.5) / samples
+                if within_ranges(sweep.ranges[index], ax + dx * t, ay + dy * t) then
+                    travel = travel + step
+                end
+            end
+            region.travel = travel
+            if travel >= sweep.distance then
+                region.settle = 0
+                target_guidance.complete(self.hud.guides, index)
+            else
+                -- Fade the whole side as it is brushed, so the loose locks stay
+                -- connected until the styled side finishes fading into view.
+                region.reveal_to = 0.4 * travel / sweep.distance
+            end
+        end
+    end
+end
+
 local function paint(self, ax, ay, bx, by)
     local dx, dy = bx - ax, by - ay
+    if self.treatment.sweep then
+        brush_sweep(self, ax, ay, dx, dy)
+        return
+    end
     local span = dx * dx + dy * dy
     local radius = self.treatment.radius
     local core_squared = (0.65 * radius) ^ 2
@@ -268,9 +312,14 @@ local function settle(self, dt)
     local complete = true
     local duration = self.treatment.settle_time or 0.32
     for index, region in ipairs(self.regions) do
+        local reveal = region.reveal or 0
         if region.settle and region.settle < 1 then
             region.settle = math.min(1, region.settle + dt / duration)
-            msg.post(RENDER, "settle_region", { index = index, amount = ease(region.settle) })
+            local amount = reveal + (1 - reveal) * ease(region.settle)
+            msg.post(RENDER, "settle_region", { index = index, amount = amount })
+        elseif not region.settle and region.reveal_to and region.reveal_to > reveal then
+            region.reveal = math.min(region.reveal_to, reveal + dt * 2)
+            msg.post(RENDER, "settle_region", { index = index, amount = region.reveal })
         end
         if region.settle ~= 1 then complete = false end
     end
