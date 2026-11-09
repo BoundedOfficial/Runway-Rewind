@@ -85,17 +85,16 @@ function on_input(self, action_id, action)
             gui.set_texture(tool, "tools")
             if sys.get_engine_info().is_debug and sys.get_config_string("runway.fixture") == "makeup" then
                 local completed = {}
-                for _, id in ipairs(artwork.extraction) do
-                    completed[#completed + 1] = id
-                end
-                for _, id in ipairs({ "clean-forehead", "clean-left", "clean-right", "robe-L", "robe-R",
-                    "brow-clean-L", "brow-clean-R", "hydrated-lips" }) do
-                    completed[#completed + 1] = id
+                for _, treatment in ipairs(cleansing) do
+                    if not treatment.transient then
+                        for _, id in ipairs(treatment.regions) do
+                            completed[#completed + 1] = id
+                        end
+                    end
                 end
                 self.runner = runner.start(makeup, label, tool, { completed = completed })
             else
-                -- Focused cleansing entry starts with the preceding extraction treatment settled.
-                self.runner = runner.start(cleansing, label, tool, { completed = artwork.extraction })
+                self.runner = runner.start(cleansing, label, tool, { completed = {} })
             end
             msg.post(".", MAKEOVER_STARTED)
             return true

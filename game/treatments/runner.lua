@@ -102,16 +102,34 @@ local function paint(self, ax, ay, bx, by)
     end
 end
 
+local function extract(self, x, y)
+    local nearest
+    local distance = self.treatment.target_radius ^ 2
+    for index, id in ipairs(self.treatment.regions) do
+        local anchor = artwork.regions[id].anchor
+        local squared = (x - anchor[1]) ^ 2 + (y - anchor[2]) ^ 2
+        if squared < distance then
+            nearest, distance = self.regions[index], squared
+        end
+    end
+    if nearest and not nearest.settle then
+        nearest.settle = 0
+    end
+end
+
+local function portrait_point(camera, x, y)
+    return camera.x + (x - CENTER_X) / camera.z, camera.y + (y - CENTER_Y) / camera.z
+end
+
 local function aim(self, x, y)
+    -- Coverage runs in portrait space. The tool pose stays in stage space.
     local tip_x, tip_y = x + TIP_X, y + TIP_Y
-    local camera = self.camera
-    if self.tip_x and (tip_x ~= self.tip_x or tip_y ~= self.tip_y) then
-        -- Coverage runs in portrait space. The tool pose stays in stage space.
-        paint(self,
-            camera.x + (self.tip_x - CENTER_X) / camera.z,
-            camera.y + (self.tip_y - CENTER_Y) / camera.z,
-            camera.x + (tip_x - CENTER_X) / camera.z,
-            camera.y + (tip_y - CENTER_Y) / camera.z)
+    local bx, by = portrait_point(self.camera, tip_x, tip_y)
+    if self.treatment.target_radius then
+        extract(self, bx, by)
+    elseif self.tip_x and (tip_x ~= self.tip_x or tip_y ~= self.tip_y) then
+        local ax, ay = portrait_point(self.camera, self.tip_x, self.tip_y)
+        paint(self, ax, ay, bx, by)
     end
     self.tip_x, self.tip_y = tip_x, tip_y
 end

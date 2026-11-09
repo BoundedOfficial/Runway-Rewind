@@ -71,11 +71,14 @@ async function checkMakeup(browser, url, input) {
     const up = () => session
       ? session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
       : page.mouse.up();
-    async function stroke(points, scale = 1, centerY = 480) {
-      await down(320, 828);
+    async function sweep(points, scale, centerY) {
       for (const [x, y] of points) {
         await move(320 + (x - 320) * scale - 28, 480 + (y - centerY) * scale + 24);
       }
+    }
+    async function stroke(points, scale = 1, centerY = 480) {
+      await down(320, 828);
+      await sweep(points, scale, centerY);
       await up();
     }
     async function snapshot(name) {
@@ -139,9 +142,11 @@ async function checkMakeup(browser, url, input) {
       [462, 325], [462, 301], [332, 301]]);
     await wait(1350);
     const brows = await snapshot('both-brow-tails-settled');
-    await stroke([
-      [114, 735], [148, 385], [186, 353], [303, 353], [302, 389], [185, 389], [218, 412], [282, 412],
-    ], 1.23, 400);
+    await down(320, 828);
+    await sweep([[114, 735], [148, 385], [186, 353], [243, 353]], 1.23, 400);
+    await snapshot('held-eye-brush');
+    await sweep([[303, 353], [302, 389], [185, 389], [218, 412], [282, 412]], 1.23, 400);
+    await up();
     await wait(450);
     const leftEye = await snapshot('combined-left-eye');
     assert.ok(changed(brows, leftEye, [171, 415, 231, 440]) > 130,

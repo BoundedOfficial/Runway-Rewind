@@ -1,6 +1,6 @@
 # Defold game
 
-The game starts on the dirty Level 1 portrait. In this focused cleansing preview, **Start makeover** settles the preceding pimple extraction treatment and introduces the cream spatula. Pick up the spatula to treat the forehead and both cheeks. The cotton wipe then arrives automatically to clean the face and neck.
+The game starts on the dirty Level 1 portrait. **Start makeover** introduces the extractor. Pick it up and guide its tip over each of the fourteen pimples. The tools then arrive in order for cleansing cream, face and neck wiping, robe cleanup, eyebrow shaving, lip scrub, and hydration.
 
 ## Windows host setup
 
@@ -40,11 +40,13 @@ npm ci --prefix game/tests
 npm test --prefix game/tests
 ```
 
-Set `CHROME_PATH` to use a different Chrome executable. Set `STAGE_EVIDENCE_DIR` to save canvas PNGs from startup, tool use, partial and settled coverage, and the final committed wipe. Pass an alternate bundle directory to the check using `npm test --prefix game/tests -- "<bundle directory>"`.
+Set `CHROME_PATH` to use a different Chrome executable. Set `STAGE_EVIDENCE_DIR` to save canvas PNGs from startup, tool use, and partial and settled skincare. Pass an alternate bundle directory to the check using `npm test --prefix game/tests -- "<bundle directory>"`.
 
-On 2026-11-09 the Windows host built the Wasm preview with Bob 1.14.0. Chrome 156.0.8078.81 over loopback verified the portrait, Start prompt, `GAME_READY`, same-origin requests, and the focused cleansing sequence with mouse input and simulated touch. The check covers an unheld portrait tap, a fast continuous stroke, release and return, independent coverage, automatic handoff with a held pointer, and wiping the face and neck. Three pixel checks use the authored clean result around the feathered lip opening to catch residual cream. Bob returned success with a Windows temporary-directory cleanup warning. The browser check exercises this focused entry on the host.
+On 2026-11-09 the Windows host built the Wasm preview with Bob 1.14.0. Chrome 156.0.8078.81 over loopback verified the portrait, Start prompt, `GAME_READY`, same-origin requests, and the seven skincare treatments with mouse input and simulated touch. The check covers an unheld portrait tap, a fast continuous stroke, release and return, automatic handoff with a held pointer, individual pimples, independent robe and eyebrow regions, and loose hair across cleaned fabric. Pixel checks compare feathered cream and lip scrub edges with the authored clean result. Bob returned success with a Windows temporary-directory cleanup warning.
 
 ## Portrait and treatment interfaces
+
+### Makeup fixture
 
 For a focused makeup check, build with `-Fixture makeup`. Start makeover in
 that debug bundle reconstructs completed skincare and introduces the foundation
@@ -60,7 +62,9 @@ The check exercises foundation, full brow arches, the combined eye look, blush
 and contour, and crimson lipstick with mouse and simulated touch. Set
 `STAGE_EVIDENCE_DIR` to capture the makeup stages.
 
-`treatments/runner.lua` consumes ordered treatment definitions. Each continuous treatment supplies an ID, ordered authored region IDs, brush radius, and tool artwork with its tip anchor. The runner handles input and timing and reports the committed treatment ID once through the stage's `treatment_completed` message. The stage suspends runner updates during pause and calls `runner.cancel` to break a held stroke. The runner accepts completed artwork IDs when rebuilding the starting portrait, with optional separate transient artwork IDs when resuming at the matching removal treatment.
+### Runner and renderer
+
+`treatments/runner.lua` consumes ordered treatment definitions. Each continuous treatment supplies an ID, ordered authored region IDs, brush radius, and tool artwork with its tip anchor. Extraction supplies `target_radius` instead of a brush radius and settles the nearest authored target under the held tip. The runner handles input and timing and reports the committed treatment ID once through the stage's `treatment_completed` message. The stage suspends runner updates during pause and calls `runner.cancel` to break a held stroke. The runner accepts completed artwork IDs when rebuilding the starting portrait, with optional separate transient artwork IDs when resuming at the matching removal treatment.
 
 An optional `camera` on a treatment sets the scale and center in the artwork's
 top-left coordinates. Framing eases during tool arrival. The runner maps the
