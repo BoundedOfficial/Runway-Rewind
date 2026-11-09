@@ -1,4 +1,7 @@
 local platform = require "platform.platform"
+local artwork = require "portrait.artwork"
+local runner = require "treatments.runner"
+local cleansing = require "treatments.cleansing"
 
 local POINTER = hash("pointer")
 local MAKEOVER_STARTED = hash("makeover_started")
@@ -8,10 +11,6 @@ local function box(x, y, width, height)
 end
 
 function init(self)
-    local portrait = box(320, 480, 640, 960)
-    gui.set_texture(portrait, "portrait")
-    gui.play_flipbook(portrait, "dirty")
-
     self.prompt = box(320, 72, 218, 54)
     gui.set_color(self.prompt, vmath.vector4(1, 0.92, 0.84, 1))
     local label = gui.new_text_node(vmath.vector3(0, 0, 0), "Start makeover")
@@ -19,9 +18,17 @@ function init(self)
     gui.set_font(label, "prompt")
     gui.set_color(label, vmath.vector4(0.26, 0.13, 0.16, 1))
     msg.post(".", "acquire_input_focus")
+    window.set_listener(function(_, event)
+        if event == window.WINDOW_EVENT_FOCUS_LOST then
+            self.pressed = false
+            if self.runner then
+                runner.cancel(self.runner, true)
+            end
+        end
+    end)
 end
 
-function update(self)
+function update(self, dt)
     if self.report_ready then
         platform.stage_ready()
         self.report_ready = false
@@ -29,10 +36,30 @@ function update(self)
         -- Allow the stage to draw before reporting that it is interactive.
         self.report_ready = true
     end
+    self.paused = platform.state().paused
+    if self.paused then self.pressed = false end
+    if self.runner then
+        if self.paused then
+            runner.cancel(self.runner)
+        else
+            local completed = runner.update(self.runner, dt)
+            if completed then
+                msg.post(".", "treatment_completed", { treatment = completed })
+            end
+        end
+    end
 end
 
 function on_input(self, action_id, action)
-    if self.started or action_id ~= POINTER then
+    if self.runner then
+        if (action_id == POINTER or not action_id) and action.x and action.y and
+                (not self.paused or action.released) then
+            runner.input(self.runner, action.x, artwork.height - action.y,
+                action.pressed, action.released, action_id == POINTER)
+        end
+        return
+    end
+    if action_id ~= POINTER then
         return
     end
     if platform.state().paused then
@@ -50,6 +77,13 @@ function on_input(self, action_id, action)
         if start then
             self.started = true
             gui.set_enabled(self.prompt, false)
+            local label = gui.new_text_node(vmath.vector3(320, 922, 0), "")
+            gui.set_font(label, "prompt")
+            gui.set_color(label, vmath.vector4(1, 0.92, 0.84, 1))
+            local tool = box(0, 0, 118, 118)
+            gui.set_texture(tool, "tools")
+            -- Focused entry starts with the preceding extraction treatment settled.
+            self.runner = runner.start(cleansing, label, tool, { completed = artwork.extraction })
             msg.post(".", MAKEOVER_STARTED)
             return true
         end

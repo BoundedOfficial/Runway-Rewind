@@ -7,4 +7,5 @@ node_modules/
 /game/.internal/
 /game/.editor_settings/
 /game/assets/dirty.png
+/game/assets/generated/
 /game/web/wasm-web/playgama-bridge.js

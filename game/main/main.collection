@@ -5,4 +5,12 @@ embedded_instances {
   "  id: \"stage\"\n"
   "  component: \"/main/stage.gui\"\n"
   "}\n"
+  "components {\n"
+  "  id: \"portrait_quad\"\n"
+  "  component: \"/portrait/quad.mesh\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"portrait_atlas\"\n"
+  "  component: \"/portrait/atlas.script\"\n"
+  "}\n"
 }

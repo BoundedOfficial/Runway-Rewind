@@ -1,0 +1,244 @@
+local artwork = require "portrait.artwork"
+
+local COLOR = graphics.BUFFER_TYPE_COLOR0_BIT
+local WIDTH, HEIGHT = artwork.width, artwork.height
+local CLEAR = { [COLOR] = vmath.vector4(0, 0, 0, 0) }
+local CLEAR_SCREEN = { [COLOR] = vmath.vector4(0.61, 0.65, 0.49, 1) }
+local IDENTITY = vmath.matrix4()
+local FULL_X = vmath.vector4(0, 0, 1, 0)
+local FULL_Y = vmath.vector4(0, 1, 0, 0)
+
+local function target(width, height)
+    return render.render_target({
+        [COLOR] = {
+            format = graphics.TEXTURE_FORMAT_RGBA,
+            width = width, height = height,
+            min_filter = graphics.TEXTURE_FILTER_LINEAR,
+            mag_filter = graphics.TEXTURE_FILTER_LINEAR,
+            u_wrap = graphics.TEXTURE_WRAP_CLAMP_TO_EDGE,
+            v_wrap = graphics.TEXTURE_WRAP_CLAMP_TO_EDGE,
+        },
+    })
+end
+
+local function viewport(destination, width, height, projection)
+    render.set_render_target(destination)
+    render.set_viewport(0, 0, width, height)
+    render.set_projection(projection or vmath.matrix4_orthographic(0, width, 0, height, -1, 1))
+end
+
+-- Map unit-quad corners into atlas UVs, including any packing rotation.
+local function atlas_basis(geometry, texture)
+    local vertices, uvs = geometry.vertices, geometry.uvs
+    local min_x, min_y = math.huge, math.huge
+    local max_x, max_y = -math.huge, -math.huge
+    for i = 1, #vertices, 2 do
+        min_x, max_x = math.min(min_x, vertices[i]), math.max(max_x, vertices[i])
+        min_y, max_y = math.min(min_y, vertices[i + 1]), math.max(max_y, vertices[i + 1])
+    end
+    local x0, y0, x1, y1, x2, y2
+    for i = 1, #vertices, 2 do
+        local x, y = vertices[i], vertices[i + 1]
+        local u, v = uvs[i] / texture.width, 1 - uvs[i + 1] / texture.height
+        if x == min_x and y == max_y then
+            x0, y0 = u, v
+        elseif x == max_x and y == max_y then
+            x1, y1 = u, v
+        elseif x == min_x and y == min_y then
+            x2, y2 = u, v
+        end
+    end
+    return vmath.vector4(x0, y0, x1 - x0, y1 - y0), vmath.vector4(x2 - x0, y2 - y0, 0, 0)
+end
+
+local function load_atlas(self, path)
+    local atlas = resource.get_atlas(path)
+    local texture = resource.get_texture_info(atlas.texture)
+    self.atlas_texture = texture.handle
+    for _, animation in ipairs(atlas.animations) do
+        local id = animation.id
+        local region = artwork.regions[id]
+        local rect = self.full_rect
+        if region then
+            rect = vmath.vector4(region.x, HEIGHT - region.y - region.height, region.width, region.height)
+        end
+        local basis_x, basis_y = atlas_basis(atlas.geometries[animation.frames[1]], texture)
+        self.layers[id] = { rect = rect, basis_x = basis_x, basis_y = basis_y }
+    end
+end
+
+local function draw_layer(self, texture, layer, mask, settle)
+    local constants = self.layer_constants
+    constants.rect = layer.rect
+    constants.uv_basis_x, constants.uv_basis_y = layer.basis_x, layer.basis_y
+    constants.coverage = vmath.vector4(settle or 1, 0, 0, 0)
+    render.enable_texture("artwork", texture)
+    if mask then render.enable_texture("reveal", mask, COLOR) end
+    render.draw(self.quad, { constants = constants })
+    if mask then render.disable_texture("reveal") end
+    render.disable_texture("artwork")
+end
+
+local function clear_regions(self)
+    for _, region in ipairs(self.active) do
+        render.delete_render_target(region.mask)
+    end
+    self.active = {}
+end
+
+local function copy_portrait(self, source, destination)
+    viewport(destination, WIDTH, HEIGHT)
+    render.clear(CLEAR)
+    draw_layer(self, source, self.surface)
+end
+
+local function save_underlay(self)
+    self.underlay = self.committed
+    self.committed = target(WIDTH, HEIGHT)
+    copy_portrait(self, self.underlay, self.committed)
+end
+
+local function draw_artwork(self, ids)
+    for _, id in ipairs(ids) do
+        draw_layer(self, self.atlas_texture, self.layers[id])
+    end
+end
+
+local function reset_portrait(self, message)
+    clear_regions(self)
+    if self.underlay then render.delete_render_target(self.underlay) end
+    if self.replacement then render.delete_render_target(self.replacement) end
+    self.underlay, self.replacement = nil, nil
+    viewport(self.committed, WIDTH, HEIGHT)
+    render.clear(CLEAR)
+    draw_layer(self, self.atlas_texture, self.layers.dirty)
+    draw_artwork(self, message.completed)
+    if message.transient then
+        save_underlay(self)
+        draw_artwork(self, message.transient)
+    end
+end
+
+local function begin_treatment(self, message)
+    clear_regions(self)
+    self.transient = message.transient
+    if message.removes_transient then
+        -- Build the cleaned result from the surface before cream/scrub. Wiping
+        -- reveals that result locally, including around artwork's feathered edges.
+        self.replacement = target(WIDTH, HEIGHT)
+        copy_portrait(self, assert(self.underlay, "No temporary treatment to remove"), self.replacement)
+        draw_artwork(self, message.regions)
+    end
+    for i, id in ipairs(message.regions) do
+        local layer = assert(self.layers[id], id)
+        local rect = layer.rect
+        local width, height = rect.z, rect.w
+        local mask = target(width, height)
+        viewport(mask, width, height)
+        render.clear(CLEAR)
+        local texture = self.atlas_texture
+        if self.replacement then
+            layer = {
+                rect = rect,
+                basis_x = vmath.vector4(rect.x / WIDTH, rect.y / HEIGHT, width / WIDTH, 0),
+                basis_y = vmath.vector4(0, height / HEIGHT, 0, 0),
+            }
+            texture = self.replacement
+        end
+        self.active[i] = { layer = layer, texture = texture, mask = mask, settle = 0 }
+    end
+end
+
+local function paint(self, message)
+    local region = self.active[message.index]
+    local rect = region.layer.rect
+    viewport(region.mask, rect.z, rect.w)
+    local constants = self.brush_constants
+    constants.rect = vmath.vector4(0, 0, rect.z, rect.w)
+    constants.brush = vmath.vector4(rect.z, rect.w, message.radius, 0)
+    constants.segment = vmath.vector4(
+        message.ax - rect.x, HEIGHT - message.ay - rect.y,
+        message.bx - rect.x, HEIGHT - message.by - rect.y)
+    render.enable_material("brush")
+    render.draw(self.quad, { constants = constants })
+    render.disable_material()
+end
+
+local function commit(self)
+    if self.replacement then
+        render.delete_render_target(self.committed)
+        render.delete_render_target(self.underlay)
+        self.committed = self.replacement
+        self.replacement, self.underlay = nil, nil
+    else
+        if self.transient then
+            save_underlay(self)
+        else
+            viewport(self.committed, WIDTH, HEIGHT)
+        end
+        for _, region in ipairs(self.active) do
+            draw_layer(self, region.texture, region.layer)
+        end
+    end
+    clear_regions(self)
+end
+
+local commands = {
+    [hash("reset_portrait")] = reset_portrait,
+    [hash("begin_treatment")] = begin_treatment,
+    [hash("paint_region")] = paint,
+    [hash("settle_region")] = function(self, message) self.active[message.index].settle = message.amount end,
+    [hash("commit_treatment")] = commit,
+}
+
+function init(self)
+    self.quad = render.predicate({ "portrait_quad" })
+    self.gui = render.predicate({ "gui" })
+    self.committed = target(WIDTH, HEIGHT)
+    self.full_rect = vmath.vector4(0, 0, WIDTH, HEIGHT)
+    self.surface = { rect = self.full_rect, basis_x = FULL_X, basis_y = FULL_Y }
+    self.active, self.layers, self.queue = {}, {}, {}
+    self.layer_constants = render.constant_buffer()
+    self.brush_constants = render.constant_buffer()
+end
+
+function update(self)
+    local width, height = render.get_window_width(), render.get_window_height()
+    if width == 0 or height == 0 then return end
+    render.set_view(IDENTITY)
+    render.disable_state(graphics.STATE_DEPTH_TEST)
+    render.disable_state(graphics.STATE_CULL_FACE)
+    render.enable_state(graphics.STATE_BLEND)
+    render.set_blend_func(graphics.BLEND_FACTOR_ONE, graphics.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA)
+    if self.atlas_texture then
+        for _, item in ipairs(self.queue) do
+            item.run(self, item.message)
+        end
+        self.queue = {}
+    end
+
+    local scale = math.min(width / WIDTH, height / HEIGHT)
+    local left, bottom = (width / scale - WIDTH) / 2, (height / scale - HEIGHT) / 2
+    viewport(render.RENDER_TARGET_DEFAULT, width, height,
+        vmath.matrix4_orthographic(-left, WIDTH + left, -bottom, HEIGHT + bottom, -1, 1))
+    render.clear(CLEAR_SCREEN)
+    if self.atlas_texture then
+        draw_layer(self, self.committed, self.surface)
+        for _, region in ipairs(self.active) do
+            draw_layer(self, region.texture, region.layer, region.mask, region.settle)
+        end
+    end
+
+    render.set_projection(vmath.matrix4_orthographic(0, width, 0, height, -1, 1))
+    render.draw(self.gui)
+    render.disable_state(graphics.STATE_BLEND)
+end
+
+function on_message(self, id, message)
+    if id == hash("load_portrait_artwork") then
+        load_atlas(self, message.atlas)
+        table.insert(self.queue, 1, { run = commands[hash("reset_portrait")], message = { completed = {} } })
+    elseif commands[id] then
+        self.queue[#self.queue + 1] = { run = commands[id], message = message }
+    end
+end
