@@ -1,0 +1,3 @@
+# Keep generated runtime data tracked, but collapsed in GitHub pull-request diffs.
+".prototype/**/assets/layers/manifest.json" linguist-generated=true
+".prototype/**/src/sprites.js" linguist-generated=true

@@ -1,0 +1,8 @@
+{
+  "name": "prototype-layer-tools",
+  "private": true,
+  "description": "Layer compilation and gallery generation for versioned prototype artwork",
+  "devDependencies": {
+    "playwright-core": "1.58.2"
+  }
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "16-hair-only",
+    "prompt": "Edit ONLY THE HAIR of FIRST image into the elegant glossy black updo with red camellia and gold hairpin inspired by SECOND image. CRITICAL preserve the FIRST woman's exact neutral closed-mouth expression, facial identity, facial geometry, eye gaze, eyebrows, nose, lips, makeup, skin and neck. Do not introduce second image's smile or facial features. Preserve FIRST clean teal floral robe pixel registration, folds, pattern and collar exactly. Remove hanging hair from shoulders, revealing matching clean silk underneath. Background same celadon. No alteration to exposed clothing or face. Full 1024x1536 frame exactly registered with FIRST image. This is a hairstyle-only change, not a new makeover or expression change. No text/tools/hands."
+  },
+  {
+    "name": "15-clean-robe",
+    "prompt": "Edit only the CLOTHING in this exact game portrait. Clean the teal floral silk robe thoroughly: remove dirt, gray scuffing and stains, restore rich deep teal silk with crisp gold branches, ivory camellias and clean dark red collar. Preserve the EXACT garment folds, collar boundaries, floral layout, silhouette and position. Preserve every strand of the messy hanging hair over the robe, and the entire face, expression, makeup, skin, neck, background and framing unchanged. No hair styling and no facial changes. Same 1024x1536 registration, no text/hands/tools."
+  },
+  {
+    "name": "14-glamour-hair-down",
+    "prompt": "Edit FIRST portrait only, a fully made-up but HAIR STILL DOWN intermediate game texture. Apply the SECOND portrait's elegant geisha-inspired cosmetics: luminous ivory complexion, rosy blush, sculpted dark brows, delicate black lashes and red-black winged eyeliner, warm champagne eyelids, rich crimson lipstick. Preserve FIRST portrait's exact facial anatomy, neutral closed-mouth expression, eye/nose/lip coordinates, facial silhouette and entire messy hanging black hairstyle, every strand across forehead/cheeks/neck, robe silhouette and background. DO NOT copy second portrait's updo, ornaments, hairline, face silhouette, smile, exposed ears or neck, or background near the jaw. Hair remains tangled and DOWN. Makeup must lie behind the original strands. Same 1024x1536 framing, exact registration to first portrait. No text, tools or hands.",
+    "ref": "13-foundation-hair-down + 02-glamour"
+  },
+  {
+    "name": "13-foundation-hair-down",
+    "prompt": "Edit FIRST portrait only. Create foundation makeup intermediate for a registered layered game. Apply smooth luminous ivory foundation to the first woman's exposed face and neck, using second image ONLY as skin-finish inspiration. CRITICAL retain FIRST image's exact face silhouette, expression, eyes/nose/mouth coordinates, ears, jaw, neck outline, robe, celadon background, and every messy hanging black hair strand including hair crossing forehead and cheeks and neck. Do not introduce the second woman's updo, hairline, exposed ears, neck shape, background near jaw or costume. Hair remains DOWN and identical to first image. Foundation follows behind overlying strands, never painting over hair or clothing. No eyeliner, lipstick, blush or contour; natural lips and groomed natural brows. Do not reshape face or change smile. Same 1024x1536 framing. No text/tools/hands.",
+    "ref": "01-clean + 06-foundation"
+  },
+  {
+    "name": "12-groomed-brows",
+    "prompt": "Edit ONLY the two eyebrows of this exact registered portrait for an eyebrow-razor treatment in a layered game. Remove stray hairs above, below and between both brows; trim the bushy inner ends. Make BOTH eyebrows visibly slimmer (about half their current thickness), neatly groomed natural soft brown arches with precise tapered tails. This is hair removal, not drawn-on makeup: no black filled brows. Keep exact eyebrow positions and arcs; same face, identity and expression, eye positions, skin pores and skin color, lighting, messy hair, lips, clothing and backdrop. Do not clean, beautify, retouch or change ANY other area. Perfect registration with the supplied 1024x1536 portrait, same full portrait framing. No tools, hands, text or split view.",
+    "ref": "assets/level-045-geisha/plates/01-clean.png"
+  },
+  {
+    "name": "01-clean",
+    "prompt": "Edit this exact original adult woman into the CLEAN BARE SKIN intermediate for a layered makeover game. Preserve exact pixel registration, identity, face silhouette, eyes/nose/lips positions, expression, proportions, pose, framing and celadon background. Remove all skin grime, pimples, blackheads, eye bags, dry flakes and lip peeling; face and neck now clean healthy natural skin, natural pale rose lips without lipstick. Groom eyebrows lightly. No cosmetics, no eyeliner or blush. Keep the messy black hair and its individual strands EXACTLY unchanged and keep the same teal robe shape, only clean dirt off the robe. Do not change anatomy or beautify into a different woman. Match the illustrated finish of the supplied image. Same 2:3 dimensions. No text, hands or tools."
+  },
+  {
+    "name": "03-extracted",
+    "prompt": "Edit this exact dirty adult woman portrait for the pimple-extracted intermediate state. Change ONLY the visible inflamed pimples: remove each raised yellow-white head and leave a small flat pink mark with a tiny pale ivory waxy residue just below it. Keep all dirt, dry skin, cracked lips, eyebrows, eye bags, messy hair, robe and background unchanged. No blood, no wounds or holes. Same exact face, expression, landmarks and pixel registration, same 2:3 canvas. No other changes. Original illustrated game texture.",
+    "ref": "C:/Users/Dev/Desktop/Projects/runway-rewind/assets/approval-geisha-v1/before-v2.png"
+  },
+  {
+    "name": "04-cream",
+    "prompt": "Edit this exact dirty woman's portrait into the cleansing cream stage of a layered beauty game. Cover forehead below hairline, both cheeks, nose and chin with thick opaque ivory cleansing cream, visibly sculpted spatula ridges, whipped peaks and glossy highlights. Leave eyebrows, eyes and lips uncovered with their existing dirty condition. Preserve EXACT pose, identity, facial geometry, pixel registration, hair, robe, lighting, celadon background and 2:3 crop. Do not clean or beautify any uncovered region. No tools, hands or text. The only change is thick creamy material over the facial skin.",
+    "ref": "C:/Users/Dev/Desktop/Projects/runway-rewind/assets/approval-geisha-v1/before-v2.png"
+  },
+  {
+    "name": "05-lip-scrub",
+    "prompt": "Edit ONLY the lips of this original adult woman portrait: add a thick coating of honey-rose sugar scrub precisely over the upper and lower lips, visible golden sugar crystals in sticky translucent gel with wet highlights. Keep her lips' exact silhouette, entire face, eyes, brows, messy hair, pose, robe, lighting and background unchanged. Exact pixel registration for layered game art, same 2:3 canvas. No tools, hands or text.",
+    "ref": "C:/Users/Dev/.codex/generated_images/01a1bac7-4b39-70d0-8723-fce9288c284e/exec-3161dfd3-f38e-4630-9548-5209eae3e76f.png"
+  }
+]

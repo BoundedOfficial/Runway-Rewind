@@ -1,0 +1,727 @@
+[
+  {
+    "id": "extract-0",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        257,
+        234,
+        14,
+        19
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      257,
+      232
+    ]
+  },
+  {
+    "id": "extract-1",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        346,
+        261,
+        14,
+        19
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      346,
+      259
+    ]
+  },
+  {
+    "id": "extract-2",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        389,
+        272,
+        12,
+        17
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      389,
+      270
+    ]
+  },
+  {
+    "id": "extract-3",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        249,
+        288,
+        13,
+        18
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      249,
+      286
+    ]
+  },
+  {
+    "id": "extract-4",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        219,
+        446,
+        14,
+        19
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      219,
+      444
+    ]
+  },
+  {
+    "id": "extract-5",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        351,
+        418,
+        12,
+        17
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      351,
+      416
+    ]
+  },
+  {
+    "id": "extract-6",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        431,
+        420,
+        13,
+        18
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      431,
+      418
+    ]
+  },
+  {
+    "id": "extract-7",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        420,
+        434,
+        12,
+        17
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      420,
+      432
+    ]
+  },
+  {
+    "id": "extract-8",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        383,
+        455,
+        13,
+        18
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      383,
+      453
+    ]
+  },
+  {
+    "id": "extract-9",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        418,
+        495,
+        13,
+        18
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      418,
+      493
+    ]
+  },
+  {
+    "id": "extract-10",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        246,
+        533,
+        13,
+        18
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      246,
+      531
+    ]
+  },
+  {
+    "id": "extract-11",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        406,
+        530,
+        12,
+        17
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      406,
+      528
+    ]
+  },
+  {
+    "id": "extract-12",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        291,
+        576,
+        13,
+        18
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      291,
+      574
+    ]
+  },
+  {
+    "id": "extract-13",
+    "plate": "03-extracted",
+    "shape": {
+      "ellipse": [
+        343,
+        574,
+        14,
+        19
+      ]
+    },
+    "source": "Mu / Lo choc mun",
+    "feather": 4,
+    "anchor": [
+      343,
+      572
+    ]
+  },
+  {
+    "id": "cream-forehead",
+    "plate": "04-cream",
+    "shape": {
+      "path": "M320 194 C263 191 222 206 207 242 C190 281 178 321 174 367 C167 409 181 467 206 509 C231 551 278 596 320 600 C362 596 409 551 434 509 C459 467 473 409 466 367 C462 321 450 281 433 242 C418 206 377 191 320 194Z",
+      "subtract": [
+        {
+          "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z"
+        },
+        {
+          "path": "M188 303 Q240 289 299 317 L307 346 Q244 331 187 341Z"
+        },
+        {
+          "path": "M452 303 Q400 289 341 317 L333 346 Q396 331 453 341Z"
+        },
+        {
+          "path": "M184 344 Q242 331 300 353 L302 400 Q252 425 189 402Z"
+        },
+        {
+          "path": "M456 344 Q398 331 340 353 L338 400 Q388 425 451 402Z"
+        }
+      ],
+      "intersect": {
+        "rect": [
+          160,
+          175,
+          320,
+          172
+        ]
+      }
+    },
+    "source": "Kem / Kem_1 / Vet kem duong",
+    "feather": 2
+  },
+  {
+    "id": "clean-forehead",
+    "plate": "01-clean",
+    "shape": {
+      "path": "M320 194 C263 191 222 206 207 242 C190 281 178 321 174 367 C167 409 181 467 206 509 C231 551 278 596 320 600 C362 596 409 551 434 509 C459 467 473 409 466 367 C462 321 450 281 433 242 C418 206 377 191 320 194ZM244 560 Q320 611 396 560 L416 697 L320 780 L224 697Z",
+      "subtract": [
+        {
+          "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z"
+        },
+        {
+          "path": "M190 315 Q240 294 297 319 L298 331 Q241 313 191 332Z"
+        },
+        {
+          "path": "M450 315 Q400 294 343 319 L342 331 Q399 313 449 332Z"
+        }
+      ],
+      "expand": 30,
+      "intersect": {
+        "rect": [
+          115,
+          145,
+          410,
+          230
+        ]
+      }
+    },
+    "source": "Base khuyet diem / Base_Mun / Base_Tan nhang",
+    "feather": 9
+  },
+  {
+    "id": "cream-left",
+    "plate": "04-cream",
+    "shape": {
+      "path": "M320 194 C263 191 222 206 207 242 C190 281 178 321 174 367 C167 409 181 467 206 509 C231 551 278 596 320 600 C362 596 409 551 434 509 C459 467 473 409 466 367 C462 321 450 281 433 242 C418 206 377 191 320 194Z",
+      "subtract": [
+        {
+          "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z"
+        },
+        {
+          "path": "M188 303 Q240 289 299 317 L307 346 Q244 331 187 341Z"
+        },
+        {
+          "path": "M452 303 Q400 289 341 317 L333 346 Q396 331 453 341Z"
+        },
+        {
+          "path": "M184 344 Q242 331 300 353 L302 400 Q252 425 189 402Z"
+        },
+        {
+          "path": "M456 344 Q398 331 340 353 L338 400 Q388 425 451 402Z"
+        }
+      ],
+      "intersect": {
+        "rect": [
+          160,
+          347,
+          160,
+          270
+        ]
+      }
+    },
+    "source": "Kem / Kem_1 / Vet kem duong",
+    "feather": 2
+  },
+  {
+    "id": "clean-left",
+    "plate": "01-clean",
+    "shape": {
+      "path": "M320 194 C263 191 222 206 207 242 C190 281 178 321 174 367 C167 409 181 467 206 509 C231 551 278 596 320 600 C362 596 409 551 434 509 C459 467 473 409 466 367 C462 321 450 281 433 242 C418 206 377 191 320 194ZM244 560 Q320 611 396 560 L416 697 L320 780 L224 697Z",
+      "subtract": [
+        {
+          "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z"
+        },
+        {
+          "path": "M190 315 Q240 294 297 319 L298 331 Q241 313 191 332Z"
+        },
+        {
+          "path": "M450 315 Q400 294 343 319 L342 331 Q399 313 449 332Z"
+        }
+      ],
+      "expand": 30,
+      "intersect": {
+        "rect": [
+          115,
+          315,
+          233,
+          510
+        ]
+      }
+    },
+    "source": "Base khuyet diem / Base_Mun / Base_Tan nhang",
+    "feather": 9
+  },
+  {
+    "id": "cream-right",
+    "plate": "04-cream",
+    "shape": {
+      "path": "M320 194 C263 191 222 206 207 242 C190 281 178 321 174 367 C167 409 181 467 206 509 C231 551 278 596 320 600 C362 596 409 551 434 509 C459 467 473 409 466 367 C462 321 450 281 433 242 C418 206 377 191 320 194Z",
+      "subtract": [
+        {
+          "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z"
+        },
+        {
+          "path": "M188 303 Q240 289 299 317 L307 346 Q244 331 187 341Z"
+        },
+        {
+          "path": "M452 303 Q400 289 341 317 L333 346 Q396 331 453 341Z"
+        },
+        {
+          "path": "M184 344 Q242 331 300 353 L302 400 Q252 425 189 402Z"
+        },
+        {
+          "path": "M456 344 Q398 331 340 353 L338 400 Q388 425 451 402Z"
+        }
+      ],
+      "intersect": {
+        "rect": [
+          320,
+          347,
+          160,
+          270
+        ]
+      }
+    },
+    "source": "Kem / Kem_1 / Vet kem duong",
+    "feather": 2
+  },
+  {
+    "id": "clean-right",
+    "plate": "01-clean",
+    "shape": {
+      "path": "M320 194 C263 191 222 206 207 242 C190 281 178 321 174 367 C167 409 181 467 206 509 C231 551 278 596 320 600 C362 596 409 551 434 509 C459 467 473 409 466 367 C462 321 450 281 433 242 C418 206 377 191 320 194ZM244 560 Q320 611 396 560 L416 697 L320 780 L224 697Z",
+      "subtract": [
+        {
+          "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z"
+        },
+        {
+          "path": "M190 315 Q240 294 297 319 L298 331 Q241 313 191 332Z"
+        },
+        {
+          "path": "M450 315 Q400 294 343 319 L342 331 Q399 313 449 332Z"
+        }
+      ],
+      "expand": 30,
+      "intersect": {
+        "rect": [
+          292,
+          315,
+          233,
+          510
+        ]
+      }
+    },
+    "source": "Base khuyet diem / Base_Mun / Base_Tan nhang",
+    "feather": 9
+  },
+  {
+    "id": "brow-clean-L",
+    "plate": "12-groomed-brows",
+    "shape": {
+      "path": "M188 303 Q240 289 299 317 L307 346 Q244 331 187 341Z"
+    },
+    "source": "Base_Long may truoc khi sua",
+    "feather": 3
+  },
+  {
+    "id": "brow-L",
+    "plate": "14-glamour-hair-down",
+    "shape": {
+      "path": "M188 303 Q240 289 299 317 L307 346 Q244 331 187 341Z",
+      "expand": 12
+    },
+    "source": "Long may dam",
+    "feather": 3
+  },
+  {
+    "id": "brow-clean-R",
+    "plate": "12-groomed-brows",
+    "shape": {
+      "path": "M452 303 Q400 289 341 317 L333 346 Q396 331 453 341Z"
+    },
+    "source": "Base_Long may truoc khi sua",
+    "feather": 3
+  },
+  {
+    "id": "brow-R",
+    "plate": "14-glamour-hair-down",
+    "shape": {
+      "path": "M452 303 Q400 289 341 317 L333 346 Q396 331 453 341Z",
+      "expand": 12
+    },
+    "source": "Long may dam",
+    "feather": 3
+  },
+  {
+    "id": "scrub",
+    "plate": "05-lip-scrub",
+    "shape": {
+      "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z"
+    },
+    "source": "Lop bot tay da chet",
+    "feather": 2
+  },
+  {
+    "id": "hydrated-lips",
+    "plate": "01-clean",
+    "shape": {
+      "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z",
+      "expand": 20
+    },
+    "source": "Moi tham nuoc / Base_Moi chua duong",
+    "feather": 5
+  },
+  {
+    "id": "foundation",
+    "plate": "13-foundation-hair-down",
+    "shape": {
+      "path": "M320 194 C263 191 222 206 207 242 C190 281 178 321 174 367 C167 409 181 467 206 509 C231 551 278 596 320 600 C362 596 409 551 434 509 C459 467 473 409 466 367 C462 321 450 281 433 242 C418 206 377 191 320 194ZM244 560 Q320 611 396 560 L416 697 L320 780 L224 697Z",
+      "subtract": [
+        {
+          "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z"
+        },
+        {
+          "path": "M188 303 Q240 289 299 317 L307 346 Q244 331 187 341Z"
+        },
+        {
+          "path": "M452 303 Q400 289 341 317 L333 346 Q396 331 453 341Z"
+        },
+        {
+          "path": "M0 750 L170 680 L192 630 L230 665 L320 795 L410 675 L449 635 L480 690 L640 750 L640 1000 L0 1000Z"
+        }
+      ],
+      "expand": 30
+    },
+    "source": "Face_danh phan",
+    "feather": 10
+  },
+  {
+    "id": "eye-look-L",
+    "plate": "14-glamour-hair-down",
+    "shape": {
+      "path": "M184 344 Q242 331 300 353 L302 400 Q252 425 189 402Z",
+      "expand": 9
+    },
+    "source": "Phan mat / Phan duoi mat / Lop kim tuyen / mascara (combined)",
+    "feather": 4
+  },
+  {
+    "id": "eye-look-R",
+    "plate": "14-glamour-hair-down",
+    "shape": {
+      "path": "M456 344 Q398 331 340 353 L338 400 Q388 425 451 402Z",
+      "expand": 9
+    },
+    "source": "Phan mat / Phan duoi mat / Lop kim tuyen / mascara (combined)",
+    "feather": 4
+  },
+  {
+    "id": "contour-L",
+    "plate": "14-glamour-hair-down",
+    "shape": {
+      "ellipse": [
+        298,
+        431,
+        17,
+        42
+      ]
+    },
+    "source": "Khoi mui",
+    "feather": 5
+  },
+  {
+    "id": "contour-R",
+    "plate": "14-glamour-hair-down",
+    "shape": {
+      "ellipse": [
+        342,
+        431,
+        17,
+        42
+      ]
+    },
+    "source": "Khoi mui",
+    "feather": 5
+  },
+  {
+    "id": "blush-L",
+    "plate": "14-glamour-hair-down",
+    "shape": {
+      "ellipse": [
+        229,
+        434,
+        45,
+        35
+      ]
+    },
+    "source": "Ma hong",
+    "feather": 5
+  },
+  {
+    "id": "blush-R",
+    "plate": "14-glamour-hair-down",
+    "shape": {
+      "ellipse": [
+        411,
+        434,
+        45,
+        35
+      ]
+    },
+    "source": "Ma hong",
+    "feather": 5
+  },
+  {
+    "id": "lipstick",
+    "plate": "14-glamour-hair-down",
+    "shape": {
+      "path": "M255 492 Q283 488 319 494 Q350 488 382 494 L388 517 Q358 548 320 548 Q278 547 252 518Z"
+    },
+    "source": "Son moi",
+    "feather": 4
+  },
+  {
+    "id": "robe-L",
+    "plate": "15-clean-robe",
+    "shape": {
+      "path": "M0 750 L170 680 L192 630 L230 665 L320 795 L410 675 L449 635 L480 690 L640 750 L640 1000 L0 1000Z",
+      "intersect": {
+        "rect": [
+          -20,
+          610,
+          354,
+          390
+        ]
+      }
+    },
+    "source": "Original robe cleanup",
+    "feather": 5
+  },
+  {
+    "id": "robe-R",
+    "plate": "15-clean-robe",
+    "shape": {
+      "path": "M0 750 L170 680 L192 630 L230 665 L320 795 L410 675 L449 635 L480 690 L640 750 L640 1000 L0 1000Z",
+      "intersect": {
+        "rect": [
+          306,
+          610,
+          354,
+          390
+        ]
+      }
+    },
+    "source": "Original robe cleanup",
+    "feather": 5
+  },
+  {
+    "id": "style-L",
+    "plate": "16-hair-only",
+    "shape": {
+      "rect": [
+        -40,
+        -40,
+        382,
+        1040
+      ],
+      "subtract": [
+        {
+          "path": "M320 194 C263 191 222 206 207 242 C190 281 178 321 174 367 C167 409 181 467 206 509 C231 551 278 596 320 600 C362 596 409 551 434 509 C459 467 473 409 466 367 C462 321 450 281 433 242 C418 206 377 191 320 194Z"
+        },
+        {
+          "path": "M188 303 Q240 289 299 317 L307 346 Q244 331 187 341Z",
+          "expand": 20
+        },
+        {
+          "path": "M452 303 Q400 289 341 317 L333 346 Q396 331 453 341Z",
+          "expand": 20
+        },
+        {
+          "path": "M245 780 L320 795 L420 710 L490 740 L540 855 L640 880 L640 1000 L0 1000 L0 950 L230 950Z"
+        }
+      ]
+    },
+    "source": "Hair-only styling",
+    "feather": 6,
+    "anchor": [
+      145,
+      320
+    ],
+    "hitShape": {
+      "ellipse": [
+        145,
+        320,
+        65,
+        170
+      ]
+    }
+  },
+  {
+    "id": "style-R",
+    "plate": "16-hair-only",
+    "shape": {
+      "rect": [
+        298,
+        -40,
+        382,
+        1040
+      ],
+      "subtract": [
+        {
+          "path": "M320 194 C263 191 222 206 207 242 C190 281 178 321 174 367 C167 409 181 467 206 509 C231 551 278 596 320 600 C362 596 409 551 434 509 C459 467 473 409 466 367 C462 321 450 281 433 242 C418 206 377 191 320 194Z"
+        },
+        {
+          "path": "M188 303 Q240 289 299 317 L307 346 Q244 331 187 341Z",
+          "expand": 20
+        },
+        {
+          "path": "M452 303 Q400 289 341 317 L333 346 Q396 331 453 341Z",
+          "expand": 20
+        },
+        {
+          "path": "M245 780 L320 795 L420 710 L490 740 L540 855 L640 880 L640 1000 L0 1000 L0 950 L230 950Z"
+        }
+      ]
+    },
+    "source": "Hair-only styling",
+    "feather": 6,
+    "anchor": [
+      495,
+      320
+    ],
+    "hitShape": {
+      "ellipse": [
+        495,
+        320,
+        65,
+        170
+      ]
+    }
+  }
+]
