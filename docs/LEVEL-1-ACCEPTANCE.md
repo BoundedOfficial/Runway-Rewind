@@ -69,6 +69,11 @@ the manifest. Both targets have the same engine and game archive hashes.
   has no comparison slider, score screen, timer, failure screen, or permanent
   tool tray.
 
+The final review found no spec discrepancies. After extracting the shared
+mouse and touch driver, the focused makeup, finish, and presentation checks
+passed against the existing debug bundles. Both release ZIP hashes still
+match the values above.
+
 ## Reproduce the checks
 
 See [Defold setup, preview, pinned dependencies, and packaging](../game/README.md)
