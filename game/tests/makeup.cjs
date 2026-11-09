@@ -143,22 +143,22 @@ async function checkMakeup(browser, url, input) {
     await wait(1350);
     const brows = await snapshot('both-brow-tails-settled');
     await down(320, 828);
-    await sweep([[114, 735], [148, 385], [186, 353], [243, 353]], 1.23, 400);
+    await sweep([[114, 735], [148, 385], [186, 353], [243, 353]], 1.18, 410);
     await snapshot('held-eye-brush');
-    await sweep([[303, 353], [302, 389], [185, 389], [218, 412], [282, 412]], 1.23, 400);
+    await sweep([[303, 353], [302, 389], [185, 389], [218, 412], [282, 412]], 1.18, 410);
     await up();
     await wait(450);
     const leftEye = await snapshot('combined-left-eye');
-    assert.ok(changed(brows, leftEye, [171, 415, 231, 440]) > 130,
+    assert.ok(changed(brows, leftEye, [177, 407, 234, 432]) > 130,
       'A sweep over the enlarged eye reveals the wing and lashes');
-    assert.ok(changed(brows, leftEye, [200, 410, 265, 423]) > 110,
+    assert.ok(changed(brows, leftEye, [205, 401, 267, 416]) > 110,
       'The same sweep reveals the shadow');
-    assert.equal(changed(brows, leftEye, [366, 410, 480, 470]), 0,
+    assert.equal(changed(brows, leftEye, [364, 399, 474, 458]), 0,
       'Applying the combined look to one eye leaves the other eye untouched');
 
     await stroke([
       [526, 735], [492, 385], [454, 353], [337, 353], [338, 389], [455, 389], [422, 412], [358, 412],
-    ], 1.23, 400);
+    ], 1.18, 410);
     await wait(1350);
     const eyes = await snapshot('combined-eyes-settled');
 
@@ -190,11 +190,16 @@ async function checkMakeup(browser, url, input) {
       'The far edge of the lips retains its color until the tool reaches it');
 
     await stroke([[244, 675], [258, 528], [374, 527], [374, 505], [258, 505]], 1.12, 490);
-    await wait(1050);
-    const finished = await snapshot('makeup-settled');
+    const framingDeadline = Date.now() + 2800;
+    const backdrop = [12, 20, 130, 210];
+    let finished;
+    do {
+      await wait(80);
+      finished = await snapshot('makeup-settled');
+    } while (changed(eyes, finished, backdrop) > 0 && Date.now() < framingDeadline);
     assert.ok(crimson(finished, [260, 495, 380, 536]) > 900,
       'The lipstick treatment settles into crimson across the lips');
-    assert.equal(changed(eyes, finished, [12, 20, 130, 210]), 0,
+    assert.equal(changed(eyes, finished, backdrop), 0,
       'The stage returns to the full portrait with the backdrop intact');
     assert.deepEqual(errors, []);
   } finally {

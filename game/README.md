@@ -42,6 +42,11 @@ npm test --prefix game/tests
 
 Set `CHROME_PATH` to use a different Chrome executable. Set `STAGE_EVIDENCE_DIR` to save canvas PNGs from startup, tool use, and partial and settled skincare. Pass an alternate bundle directory to the check using `npm test --prefix game/tests -- "<bundle directory>"`.
 
+Run `node game/tests/presentation.cjs "<debug bundle directory>"` to check the
+treatment label and progress, first-use drag guidance, and idle hints. The check
+uses mouse and simulated touch with focused portrait, landscape, and square
+viewports. Set `STAGE_EVIDENCE_DIR` to capture screenshots.
+
 Run `npm run test:lifecycle --prefix game/tests` for the focused pause check. To check a release build, pass its bundle directory followed by `--release`. The check verifies the frozen frame and suspended WebGL drawing during tool arrival, partial cream retention with mouse and simulated touch, and development control visibility.
 
 Run `npm run test:persistence --prefix game/tests -- "<bundle directory>"` on a preview built without a fixture. The check exercises standalone local storage and controlled Bridge responses, including a rejected read, a slow first read, a rejected write, and Replay while a completion save is pending. It checks the visible result after reload. Set `STAGE_EVIDENCE_DIR` to capture the restored stage and portrait.
@@ -97,5 +102,9 @@ node game/tests/finish.cjs ".scratch/finish/Runway Rewind"
 An optional `camera` on a treatment sets the scale and center in the artwork's
 top-left coordinates. Framing eases during tool arrival. The runner maps the
 tool's stage-space tip back to portrait space for treatment coverage.
+The first extraction demonstrates a drag from the tool to a target. After a
+stall, the runner briefly marks the first unfinished region using an untouched
+sample or pimple anchor in the current framing. New coverage clears the hint
+and restarts its idle delay.
 
 `portrait/portrait.render_script` uses a 640-by-960 committed target and cropped reveal targets. Each eligible pointer segment draws an analytic soft brush into the corresponding target. Independent sampled hit cells govern completion, and the remaining region fades in smoothly. The renderer multiplies the already feathered atlas artwork by reveal coverage once and composites it with premultiplied blending. For temporary products such as cream, it retains the pre-product portrait and builds the wipe result on that surface. The wipe reveals the clean result under the brush, and the committed surface switches to it after all regions settle.

@@ -26,6 +26,29 @@ local function button(x, y, width, caption)
     return node
 end
 
+local function treatment_hud()
+    local background = box(320, 916, 254, 58)
+    gui.set_color(background, vmath.vector4(0.19, 0.12, 0.12, 0.94))
+    local label = text(0, 6, "", IVORY)
+    gui.set_parent(label, background)
+    local steps = {}
+    for i = 1, #sequence do
+        local step = box((i - (#sequence + 1) / 2) * 18, -12, 13, 4)
+        gui.set_parent(step, background)
+        steps[i] = step
+    end
+    gui.set_enabled(background, false)
+    local ring = gui.new_pie_node(vmath.vector3(), vmath.vector3(42, 42, 0))
+    gui.set_outer_bounds(ring, gui.PIEBOUNDS_ELLIPSE)
+    gui.set_inner_radius(ring, 17)
+    gui.set_perimeter_vertices(ring, 36)
+    gui.set_color(ring, vmath.vector4(1, 0.96, 0.87, 1))
+    local instruction = text(320, 200, "Drag the tool", IVORY)
+    gui.set_enabled(ring, false)
+    gui.set_enabled(instruction, false)
+    return { background = background, label = label, steps = steps, ring = ring, instruction = instruction }
+end
+
 local function starting_treatment()
     if sys.get_engine_info().is_debug then
         local fixture = sys.get_config_string("runway.fixture")
@@ -50,7 +73,9 @@ local function reset_stage(self)
     self.first_unfinished = 1
     platform.save_run(0)
     show_screen(self, "start")
-    gui.set_enabled(self.label, false)
+    gui.set_enabled(self.hud.background, false)
+    gui.set_enabled(self.hud.ring, false)
+    gui.set_enabled(self.hud.instruction, false)
     gui.set_enabled(self.tool, false)
     msg.post("@render:", "reset_portrait", { completed = {} })
     msg.post(".", "makeover_reset")
@@ -58,13 +83,12 @@ end
 
 local function begin_run(self, first_unfinished)
     self.completed_treatments = first_unfinished - 1
-    self.runner = runner.start(sequence, self.label, self.tool, first_unfinished)
+    self.runner = runner.start(sequence, self.hud, self.tool, first_unfinished)
     if first_unfinished > #sequence then
         self.runner = nil
         show_screen(self, "result")
     else
         show_screen(self, nil)
-        gui.set_enabled(self.label, true)
     end
 end
 
@@ -91,8 +115,7 @@ end
 
 function init(self)
     self.prompt = button(320, 72, 218, "Start makeover")
-    self.label = text(320, 922, "", IVORY)
-    gui.set_enabled(self.label, false)
+    self.hud = treatment_hud()
     self.tool = box(0, 0, 118, 118)
     gui.set_texture(self.tool, "tools")
     gui.set_enabled(self.tool, false)
@@ -144,7 +167,6 @@ function update(self, dt)
         end
         if exited then
             self.runner = nil
-            gui.set_enabled(self.label, false)
             self.reveal_remaining = REVEAL_HOLD
         end
     elseif self.reveal_remaining then
