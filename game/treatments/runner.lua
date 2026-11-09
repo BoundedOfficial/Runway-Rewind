@@ -88,9 +88,26 @@ local function paint(self, ax, ay, bx, by)
     end
 end
 
+local function extract(self, x, y)
+    local nearest
+    local distance = self.treatment.target_radius ^ 2
+    for index, id in ipairs(self.treatment.regions) do
+        local anchor = artwork.regions[id].anchor
+        local squared = (x - anchor[1]) ^ 2 + (y - anchor[2]) ^ 2
+        if squared < distance then
+            nearest, distance = self.regions[index], squared
+        end
+    end
+    if nearest and not nearest.settle then
+        nearest.settle = 0
+    end
+end
+
 local function aim(self, x, y)
     local tip_x, tip_y = x + TIP_X, y + TIP_Y
-    if self.tip_x and (tip_x ~= self.tip_x or tip_y ~= self.tip_y) then
+    if self.treatment.target_radius then
+        extract(self, tip_x, tip_y)
+    elseif self.tip_x and (tip_x ~= self.tip_x or tip_y ~= self.tip_y) then
         paint(self, self.tip_x, self.tip_y, tip_x, tip_y)
     end
     self.tip_x, self.tip_y = tip_x, tip_y

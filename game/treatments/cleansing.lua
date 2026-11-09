@@ -1,4 +1,14 @@
+local artwork = require "portrait.artwork"
+
 return {
+    {
+        id = "pimple-extraction",
+        label = "Extract pimples",
+        regions = artwork.extraction,
+        target_radius = 13,
+        settle_time = 0.22,
+        tool = { artwork = "extractor", tip_x = 0, tip_y = -49, sway = 5 },
+    },
     {
         id = "cleansing-cream",
         label = "Apply cleansing cream",
@@ -14,5 +24,35 @@ return {
         removes_transient = true,
         radius = 42,
         tool = { artwork = "cotton-wipe", tip_x = 0, tip_y = 0, sway = 6 },
+    },
+    {
+        id = "robe-cleanup",
+        label = "Clean the robe",
+        regions = { "robe-L", "robe-R" },
+        radius = 48,
+        tool = { artwork = "fabric-pad", tip_x = 0, tip_y = 3, sway = 8 },
+    },
+    {
+        id = "eyebrow-shave",
+        label = "Shave the eyebrows",
+        regions = { "brow-clean-L", "brow-clean-R" },
+        radius = 27,
+        tool = { artwork = "eyebrow-razor", tip_x = 8, tip_y = -38, sway = 5 },
+    },
+    {
+        id = "lip-scrub",
+        label = "Apply lip scrub",
+        regions = { "scrub" },
+        transient = true,
+        radius = 26,
+        tool = { artwork = "lip-scrub-brush", tip_x = 0, tip_y = -38, sway = 9 },
+    },
+    {
+        id = "lip-hydration",
+        label = "Wipe and hydrate lips",
+        regions = { "hydrated-lips" },
+        removes_transient = true,
+        radius = 31,
+        tool = { artwork = "lip-sponge", tip_x = 0, tip_y = 4, sway = 7 },
     },
 }
