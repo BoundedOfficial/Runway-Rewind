@@ -81,11 +81,12 @@ async function snapshot(canvas, predicate) {
   return null;
 }
 
-async function checkStage(browser, url, input) {
-  const page = await browser.newPage({
+async function checkStage(browser, url, input, release) {
+  const page = release?.page ?? await browser.newPage({
     viewport: { width: 640, height: 960 },
     hasTouch: input === 'touch',
   });
+  const milestone = release?.milestone ?? (async () => {});
   try {
     const errors = [];
     const outbound = new Set();
@@ -102,26 +103,29 @@ async function checkStage(browser, url, input) {
       if (new URL(request.url()).origin !== new URL(url).origin) outbound.add(request.url());
     });
 
-    // Hold the engine download long enough to subscribe at Bridge's public event boundary.
-    let allowEngine;
-    const observerAttached = new Promise(resolve => { allowEngine = resolve; });
-    await page.route('**/*.wasm', async route => {
-      await observerAttached;
-      await route.continue();
-    });
+    if (!release) {
+      // Hold the engine download long enough to subscribe at Bridge's public event boundary.
+      let allowEngine;
+      const observerAttached = new Promise(resolve => { allowEngine = resolve; });
+      await page.route('**/*.wasm', async route => {
+        await observerAttached;
+        await route.continue();
+      });
 
-    const response = await page.goto(url);
-    assert.ok(response?.ok(), 'The local HTML5 game loads');
-    await page.waitForFunction(() => window.bridge?.isInitialized);
-    await page.evaluate(() => {
-      const sdk = window.bridge;
-      window.gameReady = new Promise(resolve => {
-        sdk.platform.on(sdk.EVENT_NAME.PLATFORM_MESSAGE_SENT, message => {
-          if (message === sdk.PLATFORM_MESSAGE.GAME_READY) resolve();
+      const response = await page.goto(url);
+      assert.ok(response?.ok(), 'The local HTML5 game loads');
+      await page.waitForFunction(() => window.bridge?.isInitialized);
+      await page.evaluate(() => {
+        const sdk = window.bridge;
+        window.gameReady = new Promise(resolve => {
+          sdk.platform.on(sdk.EVENT_NAME.PLATFORM_MESSAGE_SENT, message => {
+            if (message === sdk.PLATFORM_MESSAGE.GAME_READY) resolve();
+          });
         });
       });
-    });
-    allowEngine();
+      allowEngine();
+
+    }
 
     const canvas = page.locator('canvas');
     const stage = await canvas.boundingBox();
@@ -129,9 +133,10 @@ async function checkStage(browser, url, input) {
     const before = await snapshot(canvas, image => countPixels(image, button, cream) > 4500);
     assert.ok(before, 'The Start makeover prompt appears on the game stage');
     saveEvidence(input, 'before', before);
+    if (release) release.dirty = PNG.sync.read(before);
     assert.ok(countPixels(PNG.sync.read(before), portrait, skin) > 2500,
       `The character is visible before Start (${errors.join(', ')})`);
-    await page.evaluate(() => Promise.race([
+    if (!release) await page.evaluate(() => Promise.race([
       window.gameReady,
       new Promise((_, reject) => setTimeout(() => reject(new Error('Bridge did not receive GAME_READY')), 3000)),
     ]));
@@ -141,7 +146,7 @@ async function checkStage(browser, url, input) {
     async function move(x, y) {
       point = { x: stage.x + x * stage.width / 640, y: stage.y + y * stage.height / 960 };
       if (session) {
-        await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] });
+        await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, id: 0 }] });
       } else {
         await page.mouse.move(point.x, point.y);
       }
@@ -149,7 +154,7 @@ async function checkStage(browser, url, input) {
     async function down(x, y) {
       if (session) {
         point = { x: stage.x + x * stage.width / 640, y: stage.y + y * stage.height / 960 };
-        await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+        await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...point, id: 0 }] });
       } else {
         await move(x, y);
         await page.mouse.down();
@@ -174,9 +179,35 @@ async function checkStage(browser, url, input) {
     assert.ok(ready, 'The extractor arrives and rests at the bottom of the stage');
     await wait(450);
     const dirty = PNG.sync.read(await canvas.screenshot());
+    if (release) {
+      await down(320, 828);
+      await move(85, 745);
+      await move(86, 530);
+      await up();
+      await wait(350);
+      const offTarget = PNG.sync.read(await canvas.screenshot());
+      for (const blemish of blemishes) {
+        assert.equal(changedPixels(dirty, offTarget, around(blemish)), 0,
+          'Off-target movement leaves each pimple untouched');
+      }
+    }
     await down(320, 828);
     await move(257 - 28, 232 + 24);
     await wait(350);
+    if (release && session) {
+      // A second contact moves from the second blemish to a third while the
+      // primary contact stays on the first target.
+      const primary = { ...point, id: 0 };
+      const secondary = (x, y) => ({ x: stage.x + x, y: stage.y + y, id: 1 });
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchStart', touchPoints: [primary, secondary(318, 283)],
+      });
+      await wait(65);
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchMove', touchPoints: [primary, secondary(361, 294)],
+      });
+      await wait(65);
+    }
     await up();
     await wait(350);
     const extractedFrame = await canvas.screenshot();
@@ -215,6 +246,7 @@ async function checkStage(browser, url, input) {
         `Extraction visibly treats the pimple at ${blemish}`);
     }
     saveEvidence(input, 'cream-ready', startFrame);
+    await milestone(1);
     await down(220, 450);
     await up();
     const unheld = PNG.sync.read(await canvas.screenshot());
@@ -242,6 +274,16 @@ async function checkStage(browser, url, input) {
     assert.equal(changedPixels(beforeDrag, returned, toolRest), 0, 'The released spatula returns to rest');
     assert.equal(changedPixels(applied, returned, leftCheek), 0, 'Returning the tool preserves the stroke');
     saveEvidence(input, 'cream-partial', returnedFrame);
+    if (release?.duringCream) {
+      await release.duringCream({ canvas, beforeDrag, returned, down, up, move });
+      // The new visit restores extraction, so repeat the partial cream stroke.
+      await down(320, 828);
+      await move(127, 690);
+      await move(127, 478);
+      await move(216, 478);
+      await up();
+      await wait(350);
+    }
 
     // These strokes follow visible areas in portrait coordinates. The physical input is
     // offset from the tool's working tip by the fixed gameplay offset.
@@ -292,6 +334,7 @@ async function checkStage(browser, url, input) {
     assert.equal(changedPixels(creamSettled, heldThroughHandoff, face), 0,
       'A drag held through the handoff cannot use the cotton wipe');
     await up();
+    await milestone(2);
 
     await down(320, 828);
     await sweep([[135, 700], [135, 466], [264, 466]]);
@@ -311,6 +354,7 @@ async function checkStage(browser, url, input) {
     const cleanFrame = await canvas.screenshot();
     const cleaned = PNG.sync.read(cleanFrame);
     saveEvidence(input, 'wipe-committed', cleanFrame);
+    await milestone(3);
     assert.ok(changedPixels(creamSettled, cleaned, rightCheek) > 5000, 'The right cheek is wiped clean');
     assert.ok(changedPixels(creamSettled, cleaned, neck) > 4000, 'The wiping treatment visibly cleans the neck');
     // Reference RGBs from the original dirty plate, with extracted and clean artwork
@@ -348,6 +392,7 @@ async function checkStage(browser, url, input) {
     assert.equal(changedPixels(cleaned, robe, portrait), 0, 'Cleaning the robe preserves the face');
     assert.ok(countPixels(robe, looseHair, darkHair) >= 115, 'Loose hair still crosses the clean silk');
     saveEvidence(input, 'robe-committed', robeFrame);
+    await milestone(4);
 
     await down(320, 828);
     await sweep([[147, 448], [147, 309], ...zigzag(185, 306, 309, 343, 17)]);
@@ -372,6 +417,7 @@ async function checkStage(browser, url, input) {
     assert.equal(changedPixels(robe, shaved, eyes), 0, 'The eyes stay intact after both eyebrows are shaved');
     saveEvidence(input, 'eyebrows-shaved', shavedFrame);
     await wait(850);
+    await milestone(5);
     const scrubReady = PNG.sync.read(await canvas.screenshot());
 
     await down(320, 828);
@@ -394,6 +440,7 @@ async function checkStage(browser, url, input) {
     assert.ok(changedPixels(scrubReady, scrub, lipBounds(lipsRight)) > 800, 'The scrub settles across the rest of the lips');
     assert.equal(changedPixels(scrubReady, scrub, lipBounds(portrait)), 0, 'Applying scrub preserves the center of the face');
     saveEvidence(input, 'lip-scrub-committed', scrubFrame);
+    await milestone(6);
 
     await down(320, 828);
     await sweep([[175, 655], [175, 517], [283, 517]], lipFrame);
@@ -424,13 +471,14 @@ async function checkStage(browser, url, input) {
         `Hydration leaves the clean result at (${x}, ${y}), expected ${expected}, captured ${actual}`);
     }
     saveEvidence(input, 'lip-hydration-committed', hydratedFrame);
+    await milestone(7);
     assert.deepEqual(errors, [], 'The package loads without browser or HTTP errors');
-    assert.deepEqual([...outbound], [], 'Standalone preview makes no cross-origin requests');
+    if (!release) assert.deepEqual([...outbound], [], 'Standalone preview makes no cross-origin requests');
 
     saveEvidence(input, 'after', after);
     console.log(`PASS: ${input}, Start makeover, local resources, and all seven skincare treatments in order.`);
   } finally {
-    await page.close();
+    if (!release) await page.close();
   }
 }
 
@@ -455,7 +503,9 @@ async function main() {
   }
 }
 
-main().catch(error => {
+module.exports = { checkStage };
+
+if (require.main === module) main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });

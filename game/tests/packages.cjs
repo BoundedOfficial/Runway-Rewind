@@ -94,8 +94,8 @@ async function extract(page, points = pimples) {
   await wait(900);
 }
 
-async function open(browser, url, target, host, check) {
-  const page = await browser.newPage({ viewport: { width: 640, height: 960 } });
+async function open(browser, url, target, host, check, pageOptions = {}) {
+  const page = await browser.newPage({ viewport: { width: 640, height: 960 }, ...pageOptions });
   const errors = [];
   const warnings = [];
   const requests = [];
@@ -240,7 +240,7 @@ async function checkLifecycle(page, target, observations) {
   assert.ok(!(await snapshot(page)).equals(before), 'A fresh pickup applies treatment after resume');
 }
 
-async function verify(browser, target, bundle) {
+async function withPackage(bundle, check) {
   const server = preview(bundle);
   await new Promise((resolve, reject) => {
     server.once('error', reject);
@@ -249,6 +249,14 @@ async function verify(browser, target, bundle) {
   // A mapped local hostname also exercises Bridge's production telemetry path.
   const url = `http://runway.test:${server.address().port}/`;
   try {
+    return await check(url);
+  } finally {
+    server.close();
+  }
+}
+
+async function verify(browser, target, bundle) {
+  return withPackage(bundle, async url => {
     const observations = { reads: 0 };
     const evidence = await open(browser, url, target, {
       read: async () => {
@@ -341,18 +349,13 @@ async function verify(browser, target, bundle) {
     });
     console.log(`PASS: ${target} retries a failed write and reloads the saved treatment`);
     return evidence;
-  } finally {
-    server.close();
-  }
+  });
 }
 
 async function main() {
   const [youtube, playgama] = process.argv.slice(2);
   assert.ok(youtube && playgama, 'Pass the unpacked YouTube and Playgama package directories');
-  const browser = await chromium.launch({
-    executablePath: chrome,
-    args: ['--host-resolver-rules=MAP runway.test 127.0.0.1', '--no-proxy-server'],
-  });
+  const browser = await launchChrome();
   try {
     const evidence = { browser: `Chrome ${browser.version()}`, host: process.platform + ' ' + process.arch };
     for (const [target, bundle] of Object.entries({ youtube, playgama })) {
@@ -367,7 +370,16 @@ async function main() {
   }
 }
 
-main().catch(error => {
+function launchChrome() {
+  return chromium.launch({
+    executablePath: chrome,
+    args: ['--host-resolver-rules=MAP runway.test 127.0.0.1', '--no-proxy-server'],
+  });
+}
+
+module.exports = { cloud, key, launchChrome, open, savedRun, until, withPackage };
+
+if (require.main === module) main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });

@@ -31,15 +31,16 @@ function changed(before, after, bounds, tolerance = 15) {
     Math.abs(b - after.data[i + 2]) > tolerance);
 }
 
-async function checkFinish(browser, url, input) {
-  const page = await browser.newPage({ viewport: { width: 640, height: 960 }, hasTouch: input === 'touch' });
+async function checkFinish(browser, url, input, release) {
+  const page = release?.page ?? await browser.newPage({ viewport: { width: 640, height: 960 }, hasTouch: input === 'touch' });
+  const milestone = release?.milestone ?? (async () => {});
   try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => {
       if (message.type() === 'error' || /ERROR:/.test(message.text())) errors.push(message.text());
     });
-    await page.goto(url);
+    if (!release) await page.goto(url);
     const canvas = page.locator('canvas');
     const stage = await canvas.boundingBox();
     const session = input === 'touch' && await page.context().newCDPSession(page);
@@ -79,20 +80,22 @@ async function checkFinish(browser, url, input) {
     }
     const pale = (r, g, b) => r > 245 && g > 218 && b > 193;
     const prompt = [240, 874, 400, 902];
-    const deadline = Date.now() + 10000;
-    let dirty;
-    do {
-      dirty = await snapshot();
-    } while (count(dirty, prompt, pale) < 2000 && Date.now() < deadline);
-    assert.ok(count(dirty, prompt, pale) > 2000, 'Start makeover appears');
-    await wait(120);
-    dirty = await snapshot('dirty-start');
-    await tap(320, 888);
-    await wait(630);
+    let dirty = release?.dirty;
+    if (!release) {
+      const deadline = Date.now() + 10000;
+      do {
+        dirty = await snapshot();
+      } while (count(dirty, prompt, pale) < 2000 && Date.now() < deadline);
+      assert.ok(count(dirty, prompt, pale) > 2000, 'Start makeover appears');
+      await wait(120);
+      dirty = await snapshot('dirty-start');
+      await tap(320, 888);
+      await wait(630);
+    }
 
     const before = await snapshot('hair-ready');
     assert.ok(count(before, [260, 491, 380, 539], (r, g, b) => r - g > 55 && r - b > 28) > 900,
-      'The final-treatment fixture starts with the completed crimson lipstick');
+      'The styling treatment begins with crimson lipstick already applied');
     await stroke([[85, 750], [72, 610], [85, 547], [161, 548]]);
     const offTarget = await snapshot();
     assert.equal(changed(before, offTarget, [0, 510, 210, 710]), 0,
@@ -138,6 +141,9 @@ async function checkFinish(browser, url, input) {
     assert.ok(count(finished, actions, pale) > 1500, 'Replay appears after the finished portrait hold');
     assert.ok(count(finished, [352, 874, 446, 901], pale) > 1500, 'Next appears beside Replay');
 
+    await milestone(13);
+    await release?.onFinished(finished);
+
     if (input === 'mouse') {
       await tap(399, 888);
       const end = await snapshot('end-of-content');
@@ -150,6 +156,7 @@ async function checkFinish(browser, url, input) {
     }
 
     const replay = await snapshot('replay-dirty');
+    await release?.onReplay(replay);
     assert.ok(count(replay, prompt, pale) > 2000, 'Replay restores the Start makeover prompt');
     assert.equal(changed(dirty, replay, [0, 40, 640, 960]), 0,
       'Replay restores the original hair, robe, and blemishes');
@@ -162,7 +169,7 @@ async function checkFinish(browser, url, input) {
       'Replay starts from the extractor and can treat the first pimple again');
     assert.deepEqual(errors, []);
   } finally {
-    await page.close();
+    if (!release) await page.close();
   }
 }
 
@@ -188,7 +195,9 @@ async function main() {
   }
 }
 
-main().catch(error => {
+module.exports = { checkFinish };
+
+if (require.main === module) main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });
