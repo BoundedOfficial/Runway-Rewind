@@ -39,7 +39,7 @@ local function treatment_hud()
         steps[i] = step
     end
     gui.set_enabled(background, false)
-    local instruction = text(320, 200, "Drag the tool", IVORY)
+    local instruction = text(320, 200, "Drag to a pimple and hold", IVORY)
     gui.set_enabled(instruction, false)
     return {
         background = background, label = label, steps = steps,

@@ -10,6 +10,7 @@ const { checkMakeup } = require('./makeup.cjs');
 const { checkFinish } = require('./finish.cjs');
 const { play, checkProgress, checkGuidance, checkViewport } = require('./presentation.cjs');
 const { cloud, key, launchChrome, open, savedRun, until, withPackage } = require('./packages.cjs');
+const { aimPimple, holdPimples, pimples } = require('./stage-pointer.cjs');
 
 const evidence = process.env.STAGE_EVIDENCE_DIR;
 const targetByInput = { mouse: 'youtube', touch: 'playgama' };
@@ -200,13 +201,10 @@ async function checkToolMotion(page) {
   await page.mouse.move(320, 828);
   await page.mouse.down();
   await wait(50);
-  for (const [x, y] of [[257, 232], [346, 259], [389, 270], [249, 286], [219, 444],
-    [351, 416], [431, 418], [420, 432], [383, 453], [418, 493], [246, 531],
-    [406, 528], [291, 574], [343, 572]]) {
-    await page.mouse.move(x - 28, y + 24);
-    await wait(38);
-  }
-  await wait(445);
+  const move = (x, y) => page.mouse.move(x, y);
+  await holdPimples(move, pimples.slice(0, -1));
+  await aimPimple(move, pimples.at(-1));
+  await wait(1090);
   await pause(true);
   const exiting = await read('extractor-exiting');
   assert.ok(!region(exiting, 420, 620, 200, 200).equals(region(rested, 420, 620, 200, 200)),

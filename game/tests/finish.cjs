@@ -5,7 +5,7 @@ const { setTimeout: wait } = require('node:timers/promises');
 const { chromium } = require('playwright-core');
 const { PNG } = require('pngjs');
 const { preview } = require('../scripts/serve.cjs');
-const { createStagePointer } = require('./stage-pointer.cjs');
+const { createStagePointer, holdPimples, pimples } = require('./stage-pointer.cjs');
 
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const evidence = process.env.STAGE_EVIDENCE_DIR;
@@ -149,7 +149,10 @@ async function checkFinish(browser, url, input, release) {
     await tap(320, 888);
     await wait(600);
     const restarted = await snapshot();
-    await stroke([[257, 232]]);
+    await down(320, 828);
+    await holdPimples(move, pimples.slice(0, 1));
+    await up();
+    await wait(290);
     const extracted = await snapshot('replay-extraction');
     assert.ok(changed(restarted, extracted, [246, 219, 268, 247]) > 50,
       'Replay starts from the extractor and can treat the first pimple again');

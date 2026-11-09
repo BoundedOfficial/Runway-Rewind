@@ -5,6 +5,7 @@ const { setTimeout: wait } = require('node:timers/promises');
 const { chromium } = require('playwright-core');
 const { PNG } = require('pngjs');
 const { preview } = require('../scripts/serve.cjs');
+const { holdPimples, pimples } = require('./stage-pointer.cjs');
 
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const key = 'runway-rewind.level-1';
@@ -12,9 +13,6 @@ const sdkUrls = {
   youtube: 'https://www.youtube.com/game_api/v1',
   playgama: 'https://playgama.com/platform-sdk/v1.js',
 };
-const pimples = [[257, 232], [346, 259], [389, 270], [249, 286], [219, 444],
-  [351, 416], [431, 418], [420, 432], [383, 453], [418, 493], [246, 531],
-  [406, 528], [291, 574], [343, 572]];
 const blemish = { x: 246, y: 219, width: 22, height: 28 };
 const savedRun = boundary => JSON.stringify({
   version: 1, level: 'level-1', completedTreatments: boundary, completed: boundary === 13,
@@ -86,10 +84,7 @@ async function extract(page, points = pimples) {
   await page.mouse.move(320, 828);
   await page.mouse.down();
   await wait(65);
-  for (const [x, y] of points) {
-    await page.mouse.move(x - 28, y + 24);
-    await wait(35);
-  }
+  await holdPimples((x, y) => page.mouse.move(x, y), points);
   await page.mouse.up();
   await wait(900);
 }
