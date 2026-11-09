@@ -1,0 +1,8 @@
+name: "main"
+embedded_instances {
+  id: "stage"
+  data: "components {\n"
+  "  id: \"stage\"\n"
+  "  component: \"/main/stage.gui\"\n"
+  "}\n"
+}

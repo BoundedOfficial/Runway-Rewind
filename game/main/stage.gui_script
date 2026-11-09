@@ -1,0 +1,57 @@
+local platform = require "platform.platform"
+
+local POINTER = hash("pointer")
+local MAKEOVER_STARTED = hash("makeover_started")
+
+local function box(x, y, width, height)
+    return gui.new_box_node(vmath.vector3(x, y, 0), vmath.vector3(width, height, 0))
+end
+
+function init(self)
+    local portrait = box(320, 480, 640, 960)
+    gui.set_texture(portrait, "portrait")
+    gui.play_flipbook(portrait, "dirty")
+
+    self.prompt = box(320, 72, 218, 54)
+    gui.set_color(self.prompt, vmath.vector4(1, 0.92, 0.84, 1))
+    local label = gui.new_text_node(vmath.vector3(0, 0, 0), "Start makeover")
+    gui.set_parent(label, self.prompt)
+    gui.set_font(label, "prompt")
+    gui.set_color(label, vmath.vector4(0.26, 0.13, 0.16, 1))
+    msg.post(".", "acquire_input_focus")
+end
+
+function update(self)
+    if self.report_ready then
+        platform.stage_ready()
+        self.report_ready = false
+    elseif self.report_ready == nil then
+        -- Allow the stage to draw before reporting that it is interactive.
+        self.report_ready = true
+    end
+end
+
+function on_input(self, action_id, action)
+    if self.started or action_id ~= POINTER then
+        return
+    end
+    if platform.state().paused then
+        self.pressed = false
+        return
+    end
+
+    local over_prompt = gui.pick_node(self.prompt, action.x, action.y)
+    if action.pressed then
+        self.pressed = over_prompt
+        return self.pressed
+    elseif action.released then
+        local start = self.pressed and over_prompt
+        self.pressed = false
+        if start then
+            self.started = true
+            gui.set_enabled(self.prompt, false)
+            msg.post(".", MAKEOVER_STARTED)
+            return true
+        end
+    end
+end
