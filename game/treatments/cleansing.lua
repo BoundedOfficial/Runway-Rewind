@@ -1,4 +1,5 @@
 local artwork = require "portrait.artwork"
+local LIP_CAMERA = { scale = 1.12, y = 490 }
 
 return {
     {
@@ -45,6 +46,7 @@ return {
         regions = { "scrub" },
         transient = true,
         radius = 26,
+        camera = LIP_CAMERA,
         tool = { artwork = "lip-scrub-brush", tip_x = 0, tip_y = -38, sway = 9 },
     },
     {
@@ -53,6 +55,7 @@ return {
         regions = { "hydrated-lips" },
         removes_transient = true,
         radius = 31,
+        camera = LIP_CAMERA,
         tool = { artwork = "lip-sponge", tip_x = 0, tip_y = 4, sway = 7 },
     },
 }

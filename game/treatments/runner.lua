@@ -7,6 +7,8 @@ local OFFSTAGE = vmath.vector3(710, 828, 0)
 local TOOL_SIZE = 118
 local TIP_X, TIP_Y = 28, -24
 local TIMING = { entering = 0.4, returning = 0.25, completing = 0.16, exiting = 0.25 }
+local CENTER_X, CENTER_Y = artwork.width / 2, artwork.height / 2
+local DEFAULT_CAMERA = vmath.vector3(CENTER_X, CENTER_Y, 1)
 
 local function ease(t)
     return t * t * (3 - 2 * t)
@@ -25,6 +27,17 @@ local function animate(self, state, to)
     self.to = to
 end
 
+local function set_camera(self, camera)
+    self.camera = camera
+    msg.post(RENDER, "frame_portrait", { camera = camera })
+end
+
+local function frame_during_transition(self, camera)
+    self.camera_from = self.camera
+    self.camera_to = camera and vmath.vector3(camera.x or CENTER_X, camera.y or CENTER_Y, camera.scale)
+        or DEFAULT_CAMERA
+end
+
 local function begin(self, index)
     self.index = index
     local treatment = self.sequence[index]
@@ -32,7 +45,7 @@ local function begin(self, index)
     if not treatment then
         self.state = "finished"
         gui.set_enabled(self.tool_node, false)
-        gui.set_text(self.label, "Cleansing complete")
+        gui.set_text(self.label, "")
         return
     end
 
@@ -50,10 +63,11 @@ local function begin(self, index)
     gui.play_flipbook(self.tool_node, treatment.tool.artwork)
     position(self, OFFSTAGE.x, OFFSTAGE.y, 0)
     animate(self, "entering", REST)
+    frame_during_transition(self, treatment.camera)
 end
 
 function M.start(sequence, label, tool_node, portrait)
-    local self = { sequence = sequence, label = label, tool_node = tool_node }
+    local self = { sequence = sequence, label = label, tool_node = tool_node, camera = DEFAULT_CAMERA }
     msg.post(RENDER, "reset_portrait", portrait)
     begin(self, 1)
     return self
@@ -103,12 +117,19 @@ local function extract(self, x, y)
     end
 end
 
+local function portrait_point(camera, x, y)
+    return camera.x + (x - CENTER_X) / camera.z, camera.y + (y - CENTER_Y) / camera.z
+end
+
 local function aim(self, x, y)
+    -- Coverage runs in portrait space. The tool pose stays in stage space.
     local tip_x, tip_y = x + TIP_X, y + TIP_Y
+    local bx, by = portrait_point(self.camera, tip_x, tip_y)
     if self.treatment.target_radius then
-        extract(self, tip_x, tip_y)
+        extract(self, bx, by)
     elseif self.tip_x and (tip_x ~= self.tip_x or tip_y ~= self.tip_y) then
-        paint(self, self.tip_x, self.tip_y, tip_x, tip_y)
+        local ax, ay = portrait_point(self.camera, self.tip_x, self.tip_y)
+        paint(self, ax, ay, bx, by)
     end
     self.tip_x, self.tip_y = tip_x, tip_y
 end
@@ -183,9 +204,16 @@ function M.update(self, dt)
     local t = math.min(1, self.elapsed / TIMING[state])
     local pose = vmath.lerp(ease(t), self.from, self.to)
     position(self, pose.x, pose.y, pose.z)
+    if self.camera_to and self.camera_from ~= self.camera_to then
+        set_camera(self, vmath.lerp(ease(t), self.camera_from, self.camera_to))
+    end
     if t < 1 then return end
+    self.camera_from, self.camera_to = nil, nil
     if state == "completing" then
         animate(self, "exiting", OFFSTAGE)
+        if not self.sequence[self.index + 1] then
+            frame_during_transition(self)
+        end
     elseif state == "exiting" then
         begin(self, self.index + 1)
     else

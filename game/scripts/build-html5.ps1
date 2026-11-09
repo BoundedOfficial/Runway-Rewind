@@ -2,7 +2,9 @@ param(
     [ValidateSet('debug', 'release')]
     [string]$Variant = 'debug',
     [string]$Toolchain = (Join-Path $PSScriptRoot '../../.scratch/toolchain'),
-    [string]$BundleOutput = (Join-Path $PSScriptRoot '../../.scratch/html5')
+    [string]$BundleOutput = (Join-Path $PSScriptRoot '../../.scratch/html5'),
+    [ValidateSet('makeup')]
+    [string]$Fixture
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,6 +12,9 @@ $project = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $projectFile = Join-Path $project 'game.project'
 $Toolchain = (Resolve-Path -LiteralPath $Toolchain).Path
 $BundleOutput = [IO.Path]::GetFullPath($BundleOutput)
+if ($Fixture -and $Variant -ne 'debug') {
+    throw 'Focused fixtures require a debug build.'
+}
 
 # A stock-engine build must never reach a remote build server.
 if (Select-String -Path $projectFile -Pattern '^\s*dependencies\s*=\s*\S' -Quiet) {
@@ -37,8 +42,12 @@ Copy-Item -LiteralPath $sdk -Destination (Join-Path $project 'web/wasm-web/playg
 
 $buildArgs = @(
     '--root', $project, '--platform', 'wasm-web', '--architectures', 'wasm-web', '--variant', $Variant,
-    '--build-server', 'http://127.0.0.1:1', '--archive', '--bundle-output', $BundleOutput, 'build', 'bundle'
+    '--build-server', 'http://127.0.0.1:1', '--archive', '--bundle-output', $BundleOutput
 )
+if ($Fixture) {
+    $buildArgs += '--settings', (Join-Path $project "fixtures/$Fixture.settings")
+}
+$buildArgs += 'build', 'bundle'
 & $java -jar $bob @buildArgs
 if ($LASTEXITCODE) { throw "Defold Bob failed with exit code $LASTEXITCODE" }
 Write-Output (Join-Path $BundleOutput 'Runway Rewind')

@@ -7,6 +7,7 @@ local CLEAR_SCREEN = { [COLOR] = vmath.vector4(0.61, 0.65, 0.49, 1) }
 local IDENTITY = vmath.matrix4()
 local FULL_X = vmath.vector4(0, 0, 1, 0)
 local FULL_Y = vmath.vector4(0, 1, 0, 0)
+local DEFAULT_CAMERA = vmath.vector3(WIDTH / 2, HEIGHT / 2, 1)
 
 local function target(width, height)
     return render.render_target({
@@ -105,6 +106,7 @@ local function draw_artwork(self, ids)
 end
 
 local function reset_portrait(self, message)
+    self.camera = DEFAULT_CAMERA
     clear_regions(self)
     if self.underlay then render.delete_render_target(self.underlay) end
     if self.replacement then render.delete_render_target(self.replacement) end
@@ -185,6 +187,7 @@ end
 
 local commands = {
     [hash("reset_portrait")] = reset_portrait,
+    [hash("frame_portrait")] = function(self, message) self.camera = message.camera end,
     [hash("begin_treatment")] = begin_treatment,
     [hash("paint_region")] = paint,
     [hash("settle_region")] = function(self, message) self.active[message.index].settle = message.amount end,
@@ -200,6 +203,7 @@ function init(self)
     self.active, self.layers, self.queue = {}, {}, {}
     self.layer_constants = render.constant_buffer()
     self.brush_constants = render.constant_buffer()
+    self.camera = DEFAULT_CAMERA
 end
 
 function update(self)
@@ -218,9 +222,12 @@ function update(self)
     end
 
     local scale = math.min(width / WIDTH, height / HEIGHT)
-    local left, bottom = (width / scale - WIDTH) / 2, (height / scale - HEIGHT) / 2
+    local camera = self.camera
+    local half_width, half_height = width / (2 * scale * camera.z), height / (2 * scale * camera.z)
+    local center_y = HEIGHT - camera.y
     viewport(render.RENDER_TARGET_DEFAULT, width, height,
-        vmath.matrix4_orthographic(-left, WIDTH + left, -bottom, HEIGHT + bottom, -1, 1))
+        vmath.matrix4_orthographic(camera.x - half_width, camera.x + half_width,
+            center_y - half_height, center_y + half_height, -1, 1))
     render.clear(CLEAR_SCREEN)
     if self.atlas_texture then
         draw_layer(self, self.committed, self.surface)

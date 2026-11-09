@@ -48,6 +48,28 @@ On 2026-11-09 the Windows host built the Wasm preview with Bob 1.14.0. Chrome 15
 
 ## Portrait and treatment interfaces
 
+### Makeup fixture
+
+For a focused makeup check, build with `-Fixture makeup`. Start makeover in
+that debug bundle reconstructs completed skincare and introduces the foundation
+sponge. This fixture is selected at build time and the build script rejects it
+in release builds.
+
+```powershell
+./game/scripts/build-html5.ps1 -Fixture makeup -BundleOutput .scratch/makeup
+node game/tests/makeup.cjs ".scratch/makeup/Runway Rewind"
+```
+
+The check exercises foundation, full brow arches, the combined eye look, blush
+and contour, and crimson lipstick with mouse and simulated touch. Set
+`STAGE_EVIDENCE_DIR` to capture the makeup stages.
+
+### Runner and renderer
+
 `treatments/runner.lua` consumes ordered treatment definitions. Each continuous treatment supplies an ID, ordered authored region IDs, brush radius, and tool artwork with its tip anchor. Extraction supplies `target_radius` instead of a brush radius and settles the nearest authored target under the held tip. The runner handles input and timing and reports the committed treatment ID once through the stage's `treatment_completed` message. The stage suspends runner updates during pause and calls `runner.cancel` to break a held stroke. The runner accepts completed artwork IDs when rebuilding the starting portrait, with optional separate transient artwork IDs when resuming at the matching removal treatment.
+
+An optional `camera` on a treatment sets the scale and center in the artwork's
+top-left coordinates. Framing eases during tool arrival. The runner maps the
+tool's stage-space tip back to portrait space for treatment coverage.
 
 `portrait/portrait.render_script` uses a 640-by-960 committed target and cropped reveal targets. Each eligible pointer segment draws an analytic soft brush into the corresponding target. Independent sampled hit cells govern completion, and the remaining region fades in smoothly. The renderer multiplies the already feathered atlas artwork by reveal coverage once and composites it with premultiplied blending. For temporary products such as cream, it retains the pre-product portrait and builds the wipe result on that surface. The wipe reveals the clean result under the brush, and the committed surface switches to it after all regions settle.

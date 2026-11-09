@@ -29,6 +29,13 @@ const browRight = { left: 338, right: 446, top: 299, bottom: 344 };
 const eyes = { left: 190, right: 450, top: 355, bottom: 402 };
 const lipsLeft = { left: 258, right: 302, top: 496, bottom: 538 };
 const lipsRight = { left: 344, right: 382, top: 496, bottom: 538 };
+const lipFrame = (x, y) => [320 + (x - 320) * 1.12, 480 + (y - 490) * 1.12];
+
+function lipBounds({ left, top, right, bottom }) {
+  const [x0, y0] = lipFrame(left, top);
+  const [x1, y1] = lipFrame(right, bottom);
+  return { left: Math.ceil(x0), top: Math.ceil(y0), right: Math.floor(x1), bottom: Math.floor(y1) };
+}
 const blemishes = [
   [257, 232], [346, 259], [389, 270], [249, 286], [219, 444], [351, 416], [431, 418],
   [420, 432], [383, 453], [418, 493], [246, 531], [406, 528], [291, 574], [343, 572],
@@ -238,9 +245,10 @@ async function checkStage(browser, url, input) {
 
     // These strokes follow visible areas in portrait coordinates. The physical input is
     // offset from the tool's working tip by the fixed gameplay offset.
-    async function sweep(points) {
+    async function sweep(points, project = (x, y) => [x, y]) {
       for (const [x, y] of points) {
-        await move(x - 28, y + 24);
+        const [tipX, tipY] = project(x, y);
+        await move(tipX - 28, tipY + 24);
         await wait(24);
       }
     }
@@ -356,53 +364,55 @@ async function checkStage(browser, url, input) {
     await down(320, 828);
     await sweep([[485, 449], [485, 309], ...zigzag(453, 334, 309, 343, 17)]);
     await up();
-    await wait(1175);
+    await wait(350);
     const shavedFrame = await canvas.screenshot();
     const shaved = PNG.sync.read(shavedFrame);
     assert.ok(changedPixels(oneBrow, shaved, browRight) > 1200, 'The razor also shaves the second eyebrow');
     assert.equal(changedPixels(oneBrow, shaved, browLeft), 0, 'Shaving the second eyebrow preserves the first');
     assert.equal(changedPixels(robe, shaved, eyes), 0, 'The eyes stay intact after both eyebrows are shaved');
     saveEvidence(input, 'eyebrows-shaved', shavedFrame);
+    await wait(850);
+    const scrubReady = PNG.sync.read(await canvas.screenshot());
 
     await down(320, 828);
-    await sweep([[175, 655], [175, 517], [278, 517]]);
+    await sweep([[175, 655], [175, 517], [278, 517]], lipFrame);
     await up();
     await wait(400);
     const partialScrubFrame = await canvas.screenshot();
     const partialScrub = PNG.sync.read(partialScrubFrame);
-    assert.ok(changedPixels(shaved, partialScrub, lipsLeft) > 600, 'The scrub brush coats the lips under its tip');
-    assert.equal(changedPixels(shaved, partialScrub, lipsRight), 0, 'Scrub stays local to the stroke');
-    assert.equal(changedPixels(shaved, partialScrub, toolRest), 0, 'The scrub brush returns after the first stroke');
+    assert.ok(changedPixels(scrubReady, partialScrub, lipBounds(lipsLeft)) > 600, 'The scrub brush coats the lips under its tip');
+    assert.equal(changedPixels(scrubReady, partialScrub, lipBounds(lipsRight)), 0, 'Scrub stays local to the stroke');
+    assert.equal(changedPixels(scrubReady, partialScrub, toolRest), 0, 'The scrub brush returns after the first stroke');
     saveEvidence(input, 'lip-scrub-partial', partialScrubFrame);
 
     await down(320, 828);
-    await sweep([[175, 655], [175, 503], ...zigzag(252, 389, 503, 540, 18)]);
+    await sweep([[175, 655], [175, 503], ...zigzag(252, 389, 503, 540, 18)], lipFrame);
     await up();
     await wait(1175);
     const scrubFrame = await canvas.screenshot();
     const scrub = PNG.sync.read(scrubFrame);
-    assert.ok(changedPixels(shaved, scrub, lipsRight) > 800, 'The scrub settles across the rest of the lips');
-    assert.equal(changedPixels(shaved, scrub, portrait), 0, 'Applying scrub preserves the center of the face');
+    assert.ok(changedPixels(scrubReady, scrub, lipBounds(lipsRight)) > 800, 'The scrub settles across the rest of the lips');
+    assert.equal(changedPixels(scrubReady, scrub, lipBounds(portrait)), 0, 'Applying scrub preserves the center of the face');
     saveEvidence(input, 'lip-scrub-committed', scrubFrame);
 
     await down(320, 828);
-    await sweep([[175, 655], [175, 517], [283, 517]]);
+    await sweep([[175, 655], [175, 517], [283, 517]], lipFrame);
     await up();
     await wait(400);
     const partialHydrationFrame = await canvas.screenshot();
     const partialHydration = PNG.sync.read(partialHydrationFrame);
-    assert.ok(changedPixels(scrub, partialHydration, lipsLeft) > 600, 'The sponge removes scrub and hydrates under its tip');
-    assert.equal(changedPixels(scrub, partialHydration, lipsRight), 0, 'Unwiped scrub stays visible on the far side');
+    assert.ok(changedPixels(scrub, partialHydration, lipBounds(lipsLeft)) > 600, 'The sponge removes scrub and hydrates under its tip');
+    assert.equal(changedPixels(scrub, partialHydration, lipBounds(lipsRight)), 0, 'Unwiped scrub stays visible on the far side');
     saveEvidence(input, 'lip-hydration-partial', partialHydrationFrame);
 
     await down(320, 828);
-    await sweep([[174, 655], [174, 482], ...zigzag(230, 405, 482, 560, 26)]);
+    await sweep([[174, 655], [174, 482], ...zigzag(230, 405, 482, 560, 26)], lipFrame);
     await up();
     await wait(1175);
     const hydratedFrame = await canvas.screenshot();
     const hydrated = PNG.sync.read(hydratedFrame);
-    assert.ok(changedPixels(scrub, hydrated, lipsRight) > 800, 'Hydration reaches the full width of the lips');
-    assert.equal(changedPixels(scrub, hydrated, eyes), 0, 'Hydration preserves the eyes');
+    assert.ok(changedPixels(shaved, hydrated, lipsRight) > 600, 'Hydration reaches the full width of the lips');
+    assert.equal(changedPixels(shaved, hydrated, eyes), 0, 'Hydration preserves the eyes');
     assert.ok(changedPixels(scrub, hydrated, toolRest) > 700, 'The sponge retires after hydration settles');
     // These RGB values come from the authored hydrated artwork at the feathered
     // scrub edge, where the cleaned result should be fully visible.
