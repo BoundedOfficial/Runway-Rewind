@@ -31,7 +31,67 @@ The project has no Defold libraries, native extensions, or custom app manifests.
 
 The HTML5 shell paints its loading state, initializes the pinned Bridge, then loads the Defold archive and engine. Once Defold has drawn the interactive stage, `platform.stage_ready()` sends Bridge `GAME_READY` once. The JavaScript adapter uses Bridge pause and audio events, including its standalone focus handling. It suspends the Defold frame loop while paused, leaving browser event handlers available to resume. The stage cancels the previous drag and discards the first resumed tick before taking new input. Development builds show Pause/Resume and Restart makeover. Confirming restart returns to the dirty portrait and Start prompt.
 
-The SDK is delivered as a separate, unmodified JavaScript file. See the included [third-party notice](web/wasm-web/licenses/Playgama-Bridge-NOTICE.txt) for its source and license.
+The standalone preview uses the unmodified SDK. The target archives bundle a separate copy of Bridge 2.4.1 with the compatibility changes in [patch-bridge.cjs](scripts/patch-bridge.cjs). The script checks the upstream hash and each patch anchor. The archives include the patch source and [third-party notices](web/wasm-web/licenses/Playgama-Bridge-NOTICE.txt).
+
+## Platform packages
+
+Run from the checkout you intend to package. Setup is shared with the preview.
+In a linked worktree, supply the main checkout's `.scratch/toolchain` to
+`-Toolchain` and its `.scratch/releases` to `-ReleaseOutput` to keep the
+archives after worktree cleanup.
+
+```powershell
+./game/scripts/package-html5.ps1
+npm ci --prefix game/tests
+Expand-Archive .scratch/releases/runway-rewind-youtube.zip .scratch/releases/youtube -Force
+Expand-Archive .scratch/releases/runway-rewind-playgama.zip .scratch/releases/playgama -Force
+$env:PACKAGE_EVIDENCE_FILE = "$PWD/.scratch/releases/package-smoke.json"
+node game/tests/packages.cjs .scratch/releases/youtube .scratch/releases/playgama
+```
+
+The packager builds release mode once, then stages two ZIPs with `index.html`
+at the root. Both ship identical engine and game files. The target configs
+choose the appropriate Bridge adapter and disable analytics and remote
+configuration. Release mode excludes fixture settings, and the ZIPs omit
+the development controls script. `package-manifest.json` records the source
+revision, worktree state, toolchain and Bridge hashes, per-file hashes, and ZIP
+hashes and sizes.
+
+| Target | Startup dependencies | Package budgets |
+| --- | --- | --- |
+| YouTube Playables | The required YouTube SDK loads before game code. Bridge, engine, and game resources come from the ZIP. Bridge uses SDK callbacks for pause, resume, and audio. | Initial transfer below 30 MiB, every file below 30 MiB, total below 250 MiB, up to 8,000 files. Recommended initial transfer below 15 MiB. Saves at most 3 MiB. |
+| Playgama | Bridge loads the platform's `platform-sdk/v1.js`. Game resources and Bridge come from the ZIP. | Game files at most 300 MB, Latin filenames, startup memory below 2 GB. |
+
+The YouTube loader paints a loading frame before Bridge calls
+`firstFrameReady`. Both builds send `gameReady` after the stage draws and
+the initial restore succeeds or reaches the playable failure path. The engine
+and archive loaders defer new requests during a pause. Release storage uses
+cloud reads and writes through Bridge. The compatibility patch propagates
+unavailable storage, rejected operations, and malformed cloud records, and
+prevents browser fallback and migration. It also defers retries when a pause
+interrupts a pending write.
+
+The smoke check serves the extracted ZIPs on the Windows host and intercepts
+each platform SDK at its documented URL. It exercises the actual bundled
+Bridge with simulated host callbacks and storage responses. It checks the
+rendered stage, readiness, request origins, browser and resource errors,
+pause and resume, rejected and malformed reads, and write recovery after
+reload. The JSON report gives uncompressed local transfer through readiness
+and a sampled ready-state JS heap. These are local measurements. The
+simulation excludes live SDK transfer, platform-side requests, peak memory,
+device testing, and certification.
+
+The approved Level 1 scope excludes ads. Playgama's current required-steps
+guide calls for interstitial ads, which remains a publication requirement
+outside this delivery.
+
+Requirements checked on 2026-11-09. [YouTube setup](https://developers.google.com/youtube/gaming/playables/reference/getting_started) ·
+[YouTube integration](https://developers.google.com/youtube/gaming/playables/certification/requirements_integration) ·
+[YouTube stability](https://developers.google.com/youtube/gaming/playables/certification/requirements_stability) ·
+[YouTube privacy](https://developers.google.com/youtube/gaming/playables/certification/requirements_privacydata) ·
+[Playgama technical requirements](https://wiki.playgama.com/playgama/game-requirements/technical-requirements) ·
+[Playgama required steps](https://wiki.playgama.com/playgama/bridge-sdk/api) ·
+[Bridge releases](https://github.com/Playgama/bridge/releases).
 
 ## Focused HTML5 check
 
