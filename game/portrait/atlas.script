@@ -1,0 +1,5 @@
+go.property("artwork", resource.atlas("/assets/generated/portraits.atlas"))
+
+function init(self)
+    msg.post("@render:", "load_portrait_artwork", { atlas = self.artwork })
+end

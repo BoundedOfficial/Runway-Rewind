@@ -4,8 +4,8 @@ fonts {
   font: "/main/prompt.font"
 }
 textures {
-  name: "portrait"
-  texture: "/assets/portrait.atlas"
+  name: "tools"
+  texture: "/assets/generated/tools.atlas"
 }
 material: "/builtins/materials/gui.material"
 max_nodes: 16

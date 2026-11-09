@@ -1,0 +1,5 @@
+script: "/portrait/portrait.render_script"
+render_resources {
+  name: "brush"
+  path: "/portrait/brush.material"
+}

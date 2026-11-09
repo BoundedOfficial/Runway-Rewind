@@ -1,0 +1,9 @@
+name: "portrait_brush"
+tags: "portrait_brush"
+vertex_program: "/portrait/quad.vp"
+fragment_program: "/portrait/brush.fp"
+vertex_space: VERTEX_SPACE_LOCAL
+vertex_constants { name: "view_proj" type: CONSTANT_TYPE_VIEWPROJ }
+vertex_constants { name: "rect" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "segment" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "brush" type: CONSTANT_TYPE_USER }

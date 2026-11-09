@@ -2,9 +2,11 @@
 title = Runway Rewind
 version = 0.1.0
 bundle_resources = /web
+custom_resources = assets/generated/regions.json
 
 [bootstrap]
 main_collection = /main/main.collectionc
+render = /portrait/portrait.renderc
 
 [display]
 width = 640
