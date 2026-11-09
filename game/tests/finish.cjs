@@ -5,6 +5,7 @@ const { setTimeout: wait } = require('node:timers/promises');
 const { chromium } = require('playwright-core');
 const { PNG } = require('pngjs');
 const { preview } = require('../scripts/serve.cjs');
+const { createStagePointer } = require('./stage-pointer.cjs');
 
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const evidence = process.env.STAGE_EVIDENCE_DIR;
@@ -43,23 +44,8 @@ async function checkFinish(browser, url, input, release) {
     if (!release) await page.goto(url);
     const canvas = page.locator('canvas');
     const stage = await canvas.boundingBox();
-    const session = input === 'touch' && await page.context().newCDPSession(page);
     const point = (x, y) => ({ x: stage.x + x, y: stage.y + y });
-    const touch = (type, touchPoints) => session.send('Input.dispatchTouchEvent', { type, touchPoints });
-    async function move(x, y) {
-      if (session) await touch('touchMove', [point(x, y)]);
-      else await page.mouse.move(stage.x + x, stage.y + y);
-      await wait(24);
-    }
-    async function down(x, y) {
-      if (session) await touch('touchStart', [point(x, y)]);
-      else {
-        await move(x, y);
-        await page.mouse.down();
-      }
-      await wait(34);
-    }
-    const up = () => session ? touch('touchEnd', []) : page.mouse.up();
+    const { move, down, up } = await createStagePointer(page, input, point, { moveDelay: 24, downDelay: 34 });
     async function tap(x, y) {
       await down(x, y);
       await up();
