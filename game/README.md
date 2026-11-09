@@ -42,6 +42,11 @@ npm test --prefix game/tests
 
 Set `CHROME_PATH` to use a different Chrome executable. Set `STAGE_EVIDENCE_DIR` to save canvas PNGs from startup, tool use, and partial and settled skincare. Pass an alternate bundle directory to the check using `npm test --prefix game/tests -- "<bundle directory>"`.
 
+Run `node game/tests/presentation.cjs "<debug bundle directory>"` to check the
+treatment label and progress, first-use drag guidance, and idle hints. The check
+uses mouse and simulated touch with focused portrait, landscape, and square
+viewports. Set `STAGE_EVIDENCE_DIR` to capture screenshots.
+
 Run `npm run test:lifecycle --prefix game/tests` for the focused pause check. To check a release build, pass its bundle directory followed by `--release`. The check verifies the frozen frame and suspended WebGL drawing during tool arrival, partial cream retention with mouse and simulated touch, and development control visibility.
 
 On 2026-11-09 the Windows host built the Wasm preview with Bob 1.14.0. Chrome 156.0.8078.81 over loopback verified the portrait, Start prompt, `GAME_READY`, same-origin requests, and the seven skincare treatments with mouse input and simulated touch. The check covers an unheld portrait tap, a fast continuous stroke, release and return, automatic handoff with a held pointer, individual pimples, independent robe and eyebrow regions, and loose hair across cleaned fabric. Pixel checks compare feathered cream and lip scrub edges with the authored clean result. Bob returned success with a Windows temporary-directory cleanup warning.
@@ -87,5 +92,9 @@ node game/tests/finish.cjs ".scratch/finish/Runway Rewind"
 An optional `camera` on a treatment sets the scale and center in the artwork's
 top-left coordinates. Framing eases during tool arrival. The runner maps the
 tool's stage-space tip back to portrait space for treatment coverage.
+The first extraction demonstrates a drag from the tool to a target. After a
+stall, the runner briefly marks the first unfinished region using an untouched
+sample or pimple anchor in the current framing. New coverage clears the hint
+and restarts its idle delay.
 
 `portrait/portrait.render_script` uses a 640-by-960 committed target and cropped reveal targets. Each eligible pointer segment draws an analytic soft brush into the corresponding target. Independent sampled hit cells govern completion, and the remaining region fades in smoothly. The renderer multiplies the already feathered atlas artwork by reveal coverage once and composites it with premultiplied blending. For temporary products such as cream, it retains the pre-product portrait and builds the wipe result on that surface. The wipe reveals the clean result under the brush, and the committed surface switches to it after all regions settle.

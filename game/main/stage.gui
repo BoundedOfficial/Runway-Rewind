@@ -8,4 +8,4 @@ textures {
   texture: "/assets/generated/tools.atlas"
 }
 material: "/builtins/materials/gui.material"
-max_nodes: 16
+max_nodes: 32

@@ -12,7 +12,7 @@ return {
     },
     {
         id = "cleansing-cream",
-        label = "Apply cleansing cream",
+        label = "Cleansing cream",
         regions = { "cream-forehead", "cream-left", "cream-right" },
         transient = true,
         radius = 42,
@@ -20,7 +20,7 @@ return {
     },
     {
         id = "cleansing-wipe",
-        label = "Wipe face and neck",
+        label = "Wipe and cleanse",
         regions = { "clean-forehead", "clean-left", "clean-right" },
         removes_transient = true,
         radius = 42,
@@ -35,14 +35,14 @@ return {
     },
     {
         id = "eyebrow-shave",
-        label = "Shave the eyebrows",
+        label = "Shape the brows",
         regions = { "brow-clean-L", "brow-clean-R" },
         radius = 27,
         tool = { artwork = "eyebrow-razor", tip_x = 8, tip_y = -38, sway = 5 },
     },
     {
         id = "lip-scrub",
-        label = "Apply lip scrub",
+        label = "Lip scrub",
         regions = { "scrub" },
         transient = true,
         radius = 26,
@@ -51,7 +51,7 @@ return {
     },
     {
         id = "lip-hydration",
-        label = "Wipe and hydrate lips",
+        label = "Hydrate the lips",
         regions = { "hydrated-lips" },
         removes_transient = true,
         radius = 31,
