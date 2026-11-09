@@ -85,6 +85,21 @@ local function clear_regions(self)
         render.delete_render_target(region.mask)
     end
     self.active = {}
+    self.extraction = nil
+end
+
+local function draw_extraction(self, effect)
+    local constants = self.extraction_constants
+    local phase = effect.phase
+    local size = 66
+    constants.rect = vmath.vector4(phase.x - size / 2, phase.y - size / 2, size, size)
+    constants.extraction = phase
+    constants.dimensions = vmath.vector4(WIDTH, HEIGHT, size, effect.bead_travel)
+    render.enable_material("extraction")
+    render.enable_texture("portrait", self.committed, COLOR)
+    render.draw(self.quad, { constants = constants })
+    render.disable_texture("portrait")
+    render.disable_material()
 end
 
 local function copy_portrait(self, source, destination)
@@ -191,6 +206,10 @@ local commands = {
     [hash("begin_treatment")] = begin_treatment,
     [hash("paint_region")] = paint,
     [hash("settle_region")] = function(self, message) self.active[message.index].settle = message.amount end,
+    [hash("extraction_effect")] = function(self, message)
+        local phase = message.phase
+        self.extraction = (phase.z > 0 or phase.w < 1) and message or nil
+    end,
     [hash("commit_treatment")] = commit,
 }
 
@@ -203,6 +222,7 @@ function init(self)
     self.active, self.layers, self.queue = {}, {}, {}
     self.layer_constants = render.constant_buffer()
     self.brush_constants = render.constant_buffer()
+    self.extraction_constants = render.constant_buffer()
     self.camera = DEFAULT_CAMERA
 end
 
@@ -231,9 +251,14 @@ function update(self)
     render.clear(CLEAR_SCREEN)
     if self.atlas_texture then
         draw_layer(self, self.committed, self.surface)
+        local effect = self.extraction
+        -- Squeeze the underlying skin before the reveal and draw the released
+        -- bead above it, beneath the GUI tool.
+        if effect and effect.phase.z > 0 then draw_extraction(self, effect) end
         for _, region in ipairs(self.active) do
             draw_layer(self, region.texture, region.layer, region.mask, region.settle)
         end
+        if effect and effect.phase.w < 1 then draw_extraction(self, effect) end
     end
 
     render.set_projection(vmath.matrix4_orthographic(0, width, 0, height, -1, 1))

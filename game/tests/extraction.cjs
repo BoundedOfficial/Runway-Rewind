@@ -33,6 +33,18 @@ function changedPixels(before, after, [cx, cy], radius = 5) {
   return changed;
 }
 
+function freshPalePixels(before, after, [cx, cy]) {
+  const pale = (data, i) => data[i] > 225 && data[i + 1] > 195 && data[i + 2] > 148;
+  let count = 0;
+  for (let y = cy - 17; y <= cy + 1; y++) {
+    for (let x = cx + 10; x <= cx + 32; x++) {
+      const i = 4 * (y * before.width + x);
+      if (!pale(before.data, i) && pale(after.data, i)) count++;
+    }
+  }
+  return count;
+}
+
 async function checkExtraction(browser, url, input) {
   const page = await browser.newPage({ viewport: { width: 640, height: 960 }, hasTouch: input === 'touch' });
   try {
@@ -52,12 +64,12 @@ async function checkExtraction(browser, url, input) {
     const ready = await frame(page, `${input}-ready`);
     await pickUp();
     await aim(first);
-    await wait(85);
+    await wait(290);
     await pointer.up();
     await wait(475);
     const cancelled = await frame(page, `${input}-early-release`);
     assert.equal(changedPixels(ready, cancelled, first, 12), 0,
-      'A brief contact followed by release leaves the pimple and its guide intact');
+      'Releasing during the press leaves the pimple and its guide intact');
 
     const platformFocus = focused => page.evaluate(focused => {
       window.dispatchEvent(new Event(focused ? 'focus' : 'blur'));
@@ -89,15 +101,14 @@ async function checkExtraction(browser, url, input) {
     };
     await aim(first, 10, 3);
     const approach = await captureAt(80, 'approach');
-    const press = await captureAt(325, 'press');
     await aim(second);
     await aim(third);
-    const retract = await captureAt(615, 'retract');
+    const press = await captureAt(350, 'press');
+    const retract = await captureAt(675, 'retract');
     const toolArea = [267, 308];
     assert.ok(changedPixels(ready, approach, toolArea, 29) > 80, 'The extractor approaches the selected pimple');
     assert.ok(changedPixels(approach, press, toolArea, 29) > 80, 'The extractor visibly shifts into a press at the first target');
     assert.ok(changedPixels(press, retract, toolArea, 29) > 80, 'The extractor visibly lifts away after the press');
-    assert.ok(changedPixels(ready, press, first, 2) < 14, 'The pimple is still visible through the loop during the press');
     assert.ok(changedPixels(ready, retract, first, 2) > 14, 'The pimple begins clearing as the extractor lifts');
 
     // The pointer is still over the third pimple, where the fast swipe ended.
@@ -112,7 +123,9 @@ async function checkExtraction(browser, url, input) {
     await aim(second);
     await wait(515);
     await platformFocus(false);
-    const pausedLift = await frame(page);
+    const pausedLift = await frame(page, `${input}-paused-pop`);
+    assert.ok(freshPalePixels(ready, pausedLift, second) >= 24,
+      'A pale bead briefly emerges from the pimple as the extractor lifts');
     await pointer.up();
     await wait(300);
     assert.ok((await frame(page)).data.equals(pausedLift.data), 'A platform pause also freezes the lift');
@@ -121,6 +134,7 @@ async function checkExtraction(browser, url, input) {
     const returned = await frame(page, `${input}-two-targets-returned`);
     assert.ok(changedPixels(ready, returned, first) > 45, 'The first result persists after release');
     assert.ok(changedPixels(ready, returned, second) > 45, 'The second result persists through pause and release');
+    assert.equal(freshPalePixels(ready, returned, second), 0, 'The bead clears as the pimple settles');
     assert.equal(changedPixels(ready, returned, third, 12), 0, 'The untouched pimple keeps its guide');
     assert.equal(changedPixels(ready, returned, [320, 837], 26), 0, 'The extractor returns to its resting position');
     assert.deepEqual(errors, []);
