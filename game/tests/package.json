@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "test": "node launch.cjs",
-    "test:lifecycle": "node lifecycle.cjs"
+    "test:lifecycle": "node lifecycle.cjs",
+    "test:persistence": "node persistence.cjs"
   },
   "devDependencies": {
     "playwright-core": "1.58.2",
