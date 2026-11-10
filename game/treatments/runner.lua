@@ -99,7 +99,7 @@ end
 function M.start(sequence, hud, tool_node, first_unfinished)
     local self = {
         sequence = sequence, hud = hud, tool_node = tool_node, camera = DEFAULT_CAMERA,
-        demonstrate = first_unfinished == 1,
+        demonstrate = first_unfinished == 1, initial_hint=true,
     }
     local portrait = { completed = {} }
     for i = 1, first_unfinished - 1 do
@@ -284,7 +284,7 @@ function M.input(self, x, y, pressed, released, pointer_button)
         M.cancel(self, true)
     elseif pointer_button and pressed and not self.pointer_down then
         self.pointer_down = true
-        self.idle=0; gui.set_enabled(self.hud.gesture,false)
+        self.idle=0; self.initial_hint=false; gui.set_enabled(self.hud.gesture,false)
         local pickup_radius = TOOL_SIZE * tool_scale(self) * INTERACTION_SCALE / 2
         if self.state == "ready" and math.abs(x - self.rest.x) <= pickup_radius and
                 math.abs(y - self.rest.y) <= pickup_radius then
@@ -365,14 +365,15 @@ function M.update(self, dt)
 
     if state == "ready" then
         self.idle=self.pointer_down and 0 or (self.idle or 0)+dt
-        if self.idle>1.2 then
+        local hint_delay=self.initial_hint and 0 or 5
+        if self.idle>hint_delay then
             for i,region in ipairs(self.regions) do
                 if not region.settle then
                     local r=artwork.regions[self.treatment.regions[i]]
                     local x=r.anchor and r.anchor[1] or r.x+r.width/2
                     local y=r.anchor and r.anchor[2] or r.y+r.height/2
                     x=CENTER_X+(x-self.camera.x)*self.camera.z; y=CENTER_Y+(y-self.camera.y)*self.camera.z
-                    gesture.show(self.hud.gesture,self.idle-1.2,self.rest.x,self.rest.y,
+                    gesture.show(self.hud.gesture,self.idle-hint_delay,self.rest.x,self.rest.y,
                         self.treatment.extraction_time and 'pickup_hold' or 'pickup',x-TIP_X,y-TIP_Y)
                     break
                 end

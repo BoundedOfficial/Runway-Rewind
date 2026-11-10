@@ -52,7 +52,7 @@ const point=([x,y])=>[-70.4+x*1.22,-97.9+y*1.22];
     }
     if(await p.evaluate(()=>window.blendResults.length))break;
     await p.mouse.move(...point(q));await p.mouse.down();
-    if(stroke==='collect'){await wait(650);await p.mouse.move(...point([q[0],q[1]-110]),{steps:5});await p.mouse.move(245,795,{steps:8});await wait(80);}
+    if(stroke==='collect'){await wait(650);await p.mouse.move(...point([q[0],q[1]-110]),{steps:5});await p.mouse.move(245,900,{steps:8});await wait(80);}
     else if(stroke){for(let k=0;k<6;k++)await p.mouse.move(...point([q[0]+(k%2?-25:25),q[1]]));await wait(1200);}else await wait(1400);
     await p.mouse.up();if(stroke==='collect')await wait(100);
    }

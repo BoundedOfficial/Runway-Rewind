@@ -3,7 +3,7 @@ local M = {}
 local gesture = require 'main.gesture'
 local portrait_composite = require 'treatments.dental_portrait'
 local DIMENSIONS = json.decode(sys.load_resource('/assets/generated/dental/dimensions.json'))
-local DISH = {x=245,y=795}
+local DISH = {x=245,y=795,drop_half_width=270,drop_half_height=110}
 local CAMERA = { x = -70.4, y = -97.9, scale = 1.22 }
 local TEETH = {{80,381},{128,380},{193,388},{275,390},{378,390},{459,384},{521,377},{563,380},{93,482},{156,507},{225,521},{293,526},{359,526},{424,520},{484,506},{539,480}}
 local GAPS = {{101,396},{158,405},{223,422},{326,430},{426,417},{491,400},{548,395},{126,504},{193,532},{259,544},{326,548},{392,540},{457,528},{516,505}}
@@ -82,7 +82,7 @@ local function begin(self,index)
     else self.tool=nil end
 end
 function M.start(boundary)
-    local self={clock=0,worm_count=0}
+    local self={clock=0,worm_count=0,initial_hint=true}
     begin(self,boundary+1); return self
 end
 function M.destroy(self) if self and self.root then gui.delete_node(self.root); self.root=nil end end
@@ -101,11 +101,11 @@ local function collection_progress(self)
 end
 function M.input(self,x,y,pressed,released)
     if self.index>#M.sequence or self.transition or self.arrival<.45 then return end
-    if pressed then self.pointer={x=x,y=y}; self.previous=nil; self.idle=0; gui.set_enabled(self.gesture,false)
+    if pressed then self.pointer={x=x,y=y}; self.previous=nil; self.idle=0; self.initial_hint=false; gui.set_enabled(self.gesture,false)
     elseif self.pointer then self.pointer.x=x; self.pointer.y=y end
     if released then
         local item=self.grip
-        if item and item.freed and math.abs(x-DISH.x)<=245 and math.abs(y-DISH.y)<=95 then
+        if item and item.freed and math.abs(x-DISH.x)<=DISH.drop_half_width and math.abs(y-DISH.y)<=DISH.drop_half_height then
             item.done=true
             local dx,dy=DISH.x-147+self.worm_count*42,DISH.y-5
             self.worm_count=self.worm_count+1
@@ -255,14 +255,15 @@ function M.update(self,dt)
     end
     render_progress(self)
     self.idle=self.pointer and 0 or self.idle+dt
-    if not self.pointer and not self.transition and self.idle>1.2 then
+    local hint_delay=self.initial_hint and 0 or 5
+    if not self.pointer and not self.transition and self.idle>hint_delay then
         local target
         if self.treatment.mode=='collect' then
             for _,item in ipairs(self.items) do if not item.done then target={item.x,item.y}; break end end
         else
             for i,p in ipairs(targets(self.treatment)) do if self.work[i]<1 then target=p; break end end
         end
-        if target then local x,y=screen(target[1],target[2]); gesture.show(self.gesture,self.idle-1.2,x,y,self.treatment.mode,DISH.x,DISH.y-15) end
+        if target then local x,y=screen(target[1],target[2]); gesture.show(self.gesture,self.idle-hint_delay,x,y,self.treatment.mode,DISH.x,DISH.y-15) end
     else gui.set_enabled(self.gesture,false) end
 end
 return M

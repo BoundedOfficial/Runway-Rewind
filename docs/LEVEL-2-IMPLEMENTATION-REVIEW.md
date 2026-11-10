@@ -37,3 +37,5 @@ Validation of current tuning: `dental-motion.cjs` and `dental-forgiving.cjs` pas
 The full eight-treatment run, each checkpoint reload, replay, and exit cancellation also pass after this tuning; the release package builds successfully.
 
 Opening collection is now worms-only: all seven loose food sprites are removed, and the worm count increases from four to eight. Worms fill one centered row in the petri dish at their original scale. The focused built-game collection test collects all eight and reports zero changed mouth pixels at the scraping handoff; opening and nearly full-dish screenshots were inspected. Deposits between teeth remain for the later cleaning tools.
+
+Dish/tutorial tuning: the drop zone grows from 490 by 190 to 540 by 220 stage units. The collection regression now drops worms at y=900, beyond the former lower edge, and passes with a seamless checkpoint. Tutorial gestures appear on entry when the tool is available, then use a five-second idle cooldown after interaction in both levels. A browser pixel check confirmed the dental hint on entry, absent after three idle seconds, and visible after five.
