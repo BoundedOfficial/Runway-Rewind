@@ -15,10 +15,10 @@ M.sequence = {
     {id="scale", label="Crack the crust", tool=2, mode="stroke", plate="dirty", reveal="descaled", effect="treatment-fx-2", travel=125},
     {id="drill", label="Clean the tight spots", tool=3, mode="hold", plate="descaled", effect="treatment-fx-2", remove_effect=true, targets=GAPS, radius=24, duration=.85},
     {id="floss", label="Floss the gaps", tool=4, mode="stroke", plate="descaled", effect="treatment-fx-3", remove_effect=true, targets=GAPS, radius=30, travel=125, tip=.08},
-    {id="paste", label="A little mint magic", tool=5, mode="hold", plate="descaled", targets=PASTE, paste="apply"},
-    {id="brush", label="Brush it all away", tool=6, mode="stroke", plate="descaled", reveal="clean", travel=165, paste="remove", foam="apply", tip=.1, sway=24},
+    {id="paste", label="A little mint magic", tool=5, mode="hold", plate="descaled", targets=PASTE, paste="apply", radius=64, completion=.95},
+    {id="brush", label="Brush it all away", tool=6, mode="stroke", plate="descaled", reveal="clean", travel=165, radius=64, paste="remove", foam="apply", tip=.1, sway=24},
     {id="suction", label="Clear the foam", tool=8, mode="hold", plate="clean", foam="remove"},
-    {id="polish", label="Make it shine", tool=9, mode="hold", plate="clean", reveal="polished"},
+    {id="polish", label="Make it shine", tool=9, mode="hold", plate="clean", reveal="polished", radius=64, completion=.95},
 }
 local function screen(x,y) return CAMERA.x+x*CAMERA.scale, CAMERA.y+y*CAMERA.scale end
 local function portrait(x,y) return (x-CAMERA.x)/CAMERA.scale, (y-CAMERA.y)/CAMERA.scale end
@@ -50,8 +50,8 @@ end
 local function begin(self,index)
     if self.root then gui.delete_node(self.root) end
     self.root=gui.new_box_node(vmath.vector3(),vmath.vector3())
-    self.index=index; self.work={}; self.settle={}; self.contact={}; self.travel={}; self.items={}; self.effects={}; self.pastes={}; self.bubbles={}
-    self.pointer=nil; self.grip=nil; self.arrival=0; self.transition=nil; self.idle=0
+    self.index=index; self.work={}; self.settle={}; self.settle_from={}; self.contact={}; self.travel={}; self.items={}; self.effects={}; self.pastes={}; self.bubbles={}
+    self.pointer=nil; self.grip=nil; self.tool_x=850; self.tool_y=650; self.tool_angle=7; self.arrival=0; self.transition=nil; self.idle=0
     self.food_count=0; self.worm_count=0
     self.treatment=M.sequence[index]
     local treatment=self.treatment or {plate="polished"}
@@ -79,7 +79,8 @@ local function begin(self,index)
         for i,p in ipairs(WORMS) do create_item(self,p,"worm",i) end
     end
     if index<=#M.sequence then
-        self.tool=sprite(self,"tools-"..M.sequence[index].tool,535,800,nil,230)
+        self.tool=sprite(self,"tools-"..M.sequence[index].tool,self.tool_x,self.tool_y+230*(.5-(treatment.tip or .035)),nil,230)
+        gui.set_rotation(self.tool,vmath.vector3(0,0,self.tool_angle))
         self.gesture=gesture.create(self.root)
         for i=1,#targets(treatment) do self.work[i]=0 end
     else self.tool=nil end
@@ -95,8 +96,8 @@ function M.cancel(self)
     for _,item in ipairs(self.items) do item.hold=0 end
 end
 local function finish(self)
-    self.exit_x=self.pointer and self.pointer.x or 535
-    self.exit_y=self.pointer and self.pointer.y or 650
+    self.exit_x=self.tool_x
+    self.exit_y=self.tool_y
     self.transition=.9; self.pointer=nil; self.previous=nil; self.grip=nil
 end
 local function collection_progress(self)
@@ -133,7 +134,8 @@ local function shown(self,index,cap)
     local amount=self.work[index] or 0
     if amount<1 then return amount*cap end
     local t=math.min(1,(self.settle[index] or 0)/.32)
-    return cap+(1-cap)*t*t*(3-2*t)
+    local start=self.settle_from and self.settle_from[index] or cap
+    return start+(1-start)*t*t*(3-2*t)
 end
 local function render_progress(self)
     local treatment=self.treatment
@@ -168,8 +170,9 @@ function M.update(self,dt)
     if self.transition then
         render_progress(self)
         local t=math.min(1,(.9-self.transition)/.45)
-        alpha(self.tool,1-t)
-        place(self.tool,self.exit_x+180*t,self.exit_y+230*(.5-(self.treatment.tip or .035)))
+        local eased=t*t*(3-2*t)
+        alpha(self.tool,1-eased)
+        place(self.tool,self.exit_x+(850-self.exit_x)*eased,self.exit_y+230*(.5-(self.treatment.tip or .035)))
         if self.treatment.mode=='collect' then
             alpha(self.dish,1-t); for _,item in ipairs(self.items) do alpha(item.node,1-t) end
         end
@@ -185,10 +188,9 @@ function M.update(self,dt)
             if not self.grip then
                 local nearest,best
                 for _,item in ipairs(self.items) do
-                    -- Grab anywhere along a worm's visible body, with generous
-                    -- padding. Score candidates so nearby scraps cannot steal it.
+                    -- Follow the whole body with a narrow capsule, not a wide halo.
                     local cy=item.worm and math.max(item.y,math.min(item.y+62,y)) or item.y
-                    local score=distance(x,y,item.x,cy)/(item.worm and 62 or 37)
+                    local score=distance(x,y,item.x,cy)/(item.worm and 22 or 37)
                     if not item.done and score<1 and (not best or score<best) then nearest,best=item,score end
                 end
                 for _,item in ipairs(self.items) do
@@ -207,6 +209,7 @@ function M.update(self,dt)
             local hold=self.treatment.mode=="hold"
             local reach=(self.treatment.radius or 48)*1.15
             local complete=true
+            local total=0
             for i,p in ipairs(targets(self.treatment)) do
                 if self.work[i]<1 and hit_segment(x,y,self.previous,p,reach) then
                     -- A fast sweep may touch several targets, but cannot finish
@@ -220,6 +223,15 @@ function M.update(self,dt)
                     end
                 end
                 if self.work[i]<1 then complete=false end
+                total=total+self.work[i]
+            end
+            if self.treatment.completion and total/#self.work>=self.treatment.completion then
+                -- Ease the small remaining coverage to its final state before
+                -- checkpointing, so forgiving completion never creates a pop.
+                for i,amount in ipairs(self.work) do
+                    if amount<1 then self.settle_from[i]=shown(self,i,self.treatment.reveal and .7 or 1); self.work[i]=1; self.settle[i]=0 end
+                end
+                complete=true
             end
             if complete then finish(self) end
         end
@@ -228,12 +240,24 @@ function M.update(self,dt)
     for _,item in ipairs(self.items) do
         if item.worm then gui.play_flipbook(item.node,"worms-"..(1+math.floor(self.clock*7+item.id*1.7)%6)) end
     end
-    local tx,ty=535+math.max(0,1-self.arrival/.45)*240,650
-    if self.pointer then tx,ty=self.pointer.x,self.pointer.y end
-    if self.transition then tx,ty=self.exit_x,self.exit_y end
+    local tx,ty=535,650
+    if self.arrival<.45 then
+        local t=math.min(1,self.arrival/.45); tx=850+(535-850)*t*t*(3-2*t)
+        self.tool_x,self.tool_y=tx,ty
+    elseif self.pointer then
+        self.tool_x,self.tool_y=self.pointer.x,self.pointer.y
+    elseif not self.transition then
+        local follow=1-math.exp(-dt*12)
+        self.tool_x=self.tool_x+(tx-self.tool_x)*follow
+        self.tool_y=self.tool_y+(ty-self.tool_y)*follow
+    end
     local tip=self.treatment.tip or .035
-    place(self.tool,tx,ty+230*(.5-tip))
-    gui.set_rotation(self.tool,vmath.vector3(0,0,self.pointer and math.sin(self.clock*(self.treatment.sway or 9))*3 or 7))
+    place(self.tool,self.tool_x,self.tool_y+230*(.5-tip))
+    if not self.transition then
+        local angle=self.pointer and math.sin(self.clock*(self.treatment.sway or 9))*3 or 7
+        self.tool_angle=self.tool_angle+(angle-self.tool_angle)*(1-math.exp(-dt*16))
+        gui.set_rotation(self.tool,vmath.vector3(0,0,self.tool_angle))
+    end
     render_progress(self)
     self.idle=self.pointer and 0 or self.idle+dt
     if not self.pointer and not self.transition and self.idle>1.2 then

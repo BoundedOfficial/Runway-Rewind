@@ -34,6 +34,13 @@ void accumulate(vec2 point, vec4 target, inout float total, inout float revealed
     float weight=ratio*ratio*ratio;
     total+=weight; revealed+=weight*target.z;
 }
+vec4 finish_enamel(vec4 color, float polished) {
+    // Lift neutral enamel highlights while leaving red gums and dark gaps intact.
+    float enamel=smoothstep(.48,.78,min(color.r,min(color.g,color.b)))
+        *(1.0-smoothstep(.09,.23,max(color.r,max(color.g,color.b))-min(color.r,min(color.g,color.b))));
+    color.rgb=mix(color.rgb,vec3(.99,.995,1.0),polished*enamel*.48);
+    return color;
+}
 void main() {
     vec2 q=var_texcoord0-from_x.xy;
     float determinant=from_x.z*from_y.y-from_x.w*from_y.x;
@@ -42,7 +49,7 @@ void main() {
     float mouth=1.0-smoothstep(0.90,1.0,length((point-vec2(320.0,440.0))/vec2(324.0,164.0)));
     vec4 background=texture(texture_sampler,atlas_uv(uv,background_x,background_y));
     if (mouth<=0.0) { out_fragColor=background*var_color; return; }
-    vec4 color=texture(texture_sampler,var_texcoord0);
+    vec4 color=finish_enamel(texture(texture_sampler,var_texcoord0),from_y.z);
     if (target0.w>0.5) {
         float total=0.0, revealed=0.0;
         accumulate(point,target0,total,revealed);
@@ -62,7 +69,7 @@ void main() {
         accumulate(point,target14,total,revealed);
         accumulate(point,target15,total,revealed);
         float coverage=clamp(revealed/max(total,0.000000000001),0.0,1.0);
-        color=mix(color,texture(texture_sampler,atlas_uv(uv,to_x,to_y)),coverage);
+        color=mix(color,finish_enamel(texture(texture_sampler,atlas_uv(uv,to_x,to_y)),to_y.z),coverage);
     }
     // Apply the shared facial feather once to the final color.
     out_fragColor=mix(background,color,mouth)*var_color;

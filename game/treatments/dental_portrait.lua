@@ -29,7 +29,8 @@ function M.configure(node,from,to,targets)
     gui.set_material(node,'dental_portrait')
     for _,entry in ipairs({{'from',from},{'to',to or from},{'background','dirty'}}) do
         local basis=assert(bases['dental-'..entry[2]])
-        gui.set(node,entry[1]..'_x',basis.x); gui.set(node,entry[1]..'_y',basis.y)
+        gui.set(node,entry[1]..'_x',basis.x)
+        gui.set(node,entry[1]..'_y',vmath.vector4(basis.y.x,basis.y.y,entry[2]=='polished' and 1 or 0,0))
     end
     M.update(node,targets,{})
 end
