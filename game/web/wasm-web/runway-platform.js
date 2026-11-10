@@ -12,18 +12,11 @@ let pauseCount = 0;
 let restartCount = 0;
 let pendingResize;
 let activeWaiters = [];
-const RUN_KEY = 'runway-rewind.level-1';
 const INITIAL_LOAD_LIMIT_MS = 1500;
 const STORAGE_RETRY_MS = 2000;
-
-let treatmentCount;
-let initialRun = { ready: false };
-let initialRunTaken = false;
-let savedBoundary; // undefined while unknown, null after a confirmed empty read
-let pendingRun;
-let storageBusy = false;
-let storageBlocked = false;
-let storageRetry;
+const runs = new Map();
+let activeLevel = 'level-1';
+function driveStorage() { for (const run of runs.values()) run.drive(); }
 
 function updatePause() {
   const next = hostPaused || developerPaused;
@@ -91,26 +84,31 @@ function standaloneStorage() {
   return sdk.platform.id === 'mock' || sdk.platform.id === 'standalone';
 }
 
+function createRun(level, treatmentCount) {
+  const runKey = 'runway-rewind.' + level;
+  let initialRun = { ready: false }, initialRunTaken = false;
+  let savedBoundary, pendingRun, storageRetry;
+  let storageBusy = false, storageBlocked = false;
 async function loadRun() {
   if (!sdk?.isInitialized) throw new Error('Playgama Bridge is unavailable');
-  return standaloneStorage() ? window.localStorage.getItem(RUN_KEY) : sdk.storage.get(RUN_KEY, false);
+  return standaloneStorage() ? window.localStorage.getItem(runKey) : sdk.storage.get(runKey, false);
 }
 
 async function storeRun(completedTreatments) {
   const value = JSON.stringify({
     version: 1,
-    level: 'level-1',
+    level,
     completedTreatments,
     completed: completedTreatments === treatmentCount,
   });
-  if (standaloneStorage()) window.localStorage.setItem(RUN_KEY, value);
-  else await sdk.storage.set(RUN_KEY, value);
+  if (standaloneStorage()) window.localStorage.setItem(runKey, value);
+  else await sdk.storage.set(runKey, value);
 }
 
 function parseRun(value) {
   if (value === null) return null;
   const run = JSON.parse(value);
-  if (run?.version !== 1 || run.level !== 'level-1' || !Number.isInteger(run.completedTreatments)
+  if (run?.version !== 1 || run.level !== level || !Number.isInteger(run.completedTreatments)
       || run.completedTreatments < 0 || run.completedTreatments > treatmentCount
       || run.completed !== (run.completedTreatments === treatmentCount)) {
     throw new Error('Unsupported saved makeover');
@@ -122,7 +120,7 @@ function allowUnsavedStart() {
   if (!initialRun.ready) initialRun = { ready: true };
 }
 
-async function driveStorage() {
+async function driveRunStorage() {
   if (treatmentCount === undefined || paused || storageBusy || storageBlocked || storageRetry) return;
   const loading = savedBoundary === undefined;
   if (!loading && (!pendingRun || (!pendingRun.reset && savedBoundary !== null
@@ -154,12 +152,28 @@ async function driveStorage() {
     console.warn(loading ? 'Could not restore the saved makeover' : 'Could not save the makeover', error);
     storageRetry = setTimeout(() => {
       storageRetry = undefined;
-      driveStorage();
+      driveRunStorage();
     }, STORAGE_RETRY_MS);
   } finally {
     storageBusy = false;
-    driveStorage();
+    driveRunStorage();
   }
+}
+
+  setTimeout(allowUnsavedStart, INITIAL_LOAD_LIMIT_MS);
+  return {
+    drive: driveRunStorage,
+    enter() {
+      if (pendingRun || savedBoundary !== undefined) initialRun = { ready: true, boundary: pendingRun?.boundary ?? savedBoundary };
+      driveRunStorage();
+    },
+    initial() { if (initialRun.ready) initialRunTaken = true; return initialRun; },
+    save(boundary) {
+      if (!Number.isInteger(boundary) || boundary < 0 || boundary > treatmentCount) return;
+      pendingRun = { boundary, reset: boundary === 0 || pendingRun?.reset === true };
+      driveRunStorage();
+    },
+  };
 }
 
 window.runwayPlatform = {
@@ -200,21 +214,14 @@ window.runwayPlatform = {
     };
   },
 
-  prepareRun(count) {
-    treatmentCount = count;
-    setTimeout(allowUnsavedStart, INITIAL_LOAD_LIMIT_MS);
-    driveStorage();
+  prepareRun(count, level = 'level-1') {
+    if (!['level-1', 'level-2'].includes(level)) throw new Error('Unknown level');
+    activeLevel = level;
+    if (!runs.has(level)) runs.set(level, createRun(level, count));
+    runs.get(level).enter();
   },
 
-  initialRun() {
-    if (initialRun.ready) initialRunTaken = true;
-    return initialRun;
-  },
+  initialRun() { return runs.get(activeLevel)?.initial() ?? { ready: true }; },
 
-  saveRun(boundary) {
-    // Retain the newest milestone while a read or write is in flight. A reset
-    // authorizes lower progress once the existing record is known.
-    pendingRun = { boundary, reset: boundary === 0 || pendingRun?.reset === true };
-    driveStorage();
-  },
+  saveRun(boundary, level = activeLevel) { runs.get(level)?.save(boundary); },
 };

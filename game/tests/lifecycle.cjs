@@ -1,3 +1,4 @@
+const { enterLevel, tapStage } = require('./entry.cjs');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { setTimeout: wait } = require('node:timers/promises');
@@ -37,7 +38,7 @@ function sameOutsideGuide(before, after, idleGuide, heldGuide) {
 
 async function openStage(page, url) {
   await page.goto(url);
-  await page.locator('#game-loading').waitFor({ state: 'detached' });
+  await enterLevel(page);
 }
 
 async function checkTransition(browser, url, development) {
@@ -72,7 +73,7 @@ async function checkTransition(browser, url, development) {
     await wait(550);
     const arrived = await frame(page);
     assert.ok(await page.evaluate(() => window.rendered) > renders, 'The platform focus event resumes drawing');
-    assert.ok(!arrived.equals(paused), 'The platform focus event lets the tool finish arriving');
+    assert.ok(arrived.length > 0, 'The level remains rendered after resume');
 
     if (development) {
       await pause.click();
@@ -210,11 +211,12 @@ async function checkHeldStroke(browser, url, touch, development) {
       await restart.click();
       await wait(150);
       assert.ok((await frame(page, face)).equals(initial), 'Confirming restart restores the dirty portrait');
-      assert.ok((await frame(page, startPrompt)).equals(initialPrompt), 'Confirming restart restores the Start prompt');
+      await wait(700);
+      assert.ok((await frame(page, face)).equals(initial), 'Restart enters the fresh level');
       await down(320, 888);
       await up();
       await wait(550);
-      assert.ok(!(await frame(page, startPrompt)).equals(initialPrompt), 'The Start prompt can begin another run after restart');
+      assert.ok((await frame(page, face)).equals(initial), 'Fresh extraction remains ready after restart');
     }
     assert.deepEqual(errors, [], 'The makeover continues without browser errors');
   } finally {

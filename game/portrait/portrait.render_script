@@ -3,7 +3,7 @@ local artwork = require "portrait.artwork"
 local COLOR = graphics.BUFFER_TYPE_COLOR0_BIT
 local WIDTH, HEIGHT = artwork.width, artwork.height
 local CLEAR = { [COLOR] = vmath.vector4(0, 0, 0, 0) }
-local CLEAR_SCREEN = { [COLOR] = vmath.vector4(0.63, 0.68, 0.52, 1) }
+local CLEAR_SCREEN = { [COLOR] = vmath.vector4(0.84, 0.81, 0.94, 1) }
 local IDENTITY = vmath.matrix4()
 local FULL_X = vmath.vector4(0, 0, 1, 0)
 local FULL_Y = vmath.vector4(0, 1, 0, 0)

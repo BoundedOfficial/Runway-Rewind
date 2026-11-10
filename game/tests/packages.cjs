@@ -1,3 +1,4 @@
+const { enterLevel } = require('./entry.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -133,6 +134,7 @@ async function open(browser, url, target, host, check, pageOptions = {}) {
   await page.route('**/*', route => {
     const address = route.request().url();
     requests.push(address);
+    if (address.endsWith('/playgama-bridge-config.json')) return route.fulfill({contentType:'application/json',body:JSON.stringify({forciblySetPlatformId:target,sendAnalyticsEvents:false,debug:false})});
     if (address === sdk) return route.fulfill({
       contentType: 'application/javascript',
       body: `(${hostSdk.toString()})(${JSON.stringify(target)});`,
@@ -171,6 +173,7 @@ async function open(browser, url, target, host, check, pageOptions = {}) {
       assert.ok(startupTransfer < 30 * 1024 * 1024, 'Initial local transfer is under 30 MiB');
       assert.ok(heap.usedSize < 512 * 1024 * 1024, 'Sampled JS heap is under 512 MiB');
     }
+    await enterLevel(page);
     await check(page, warnings);
     assert.deepEqual([...new Set(requests.filter(address => !address.startsWith(url)))], [sdk]);
     assert.deepEqual(errors, [], 'The package runs without browser or resource errors');
@@ -340,6 +343,7 @@ async function verify(browser, target, bundle) {
         { existing: 'unrelated record', [key]: savedRun(1) });
       await page.reload();
       await page.waitForFunction(() => window.hostEvents?.some(event => event.type === 'ready'));
+      await enterLevel(page);
       assert.ok((await snapshot(page)).equals(extracted), 'Reload restores extraction from the cloud');
     });
     console.log(`PASS: ${target} retries a failed write and reloads the saved treatment`);
@@ -348,12 +352,12 @@ async function verify(browser, target, bundle) {
 }
 
 async function main() {
-  const [youtube, playgama] = process.argv.slice(2);
-  assert.ok(youtube && playgama, 'Pass the unpacked YouTube and Playgama package directories');
+  const [bundle] = process.argv.slice(2);
+  assert.ok(bundle, 'Pass the unpacked auto-detect distribution package');
   const browser = await launchChrome();
   try {
     const evidence = { browser: `Chrome ${browser.version()}`, host: process.platform + ' ' + process.arch };
-    for (const [target, bundle] of Object.entries({ youtube, playgama })) {
+    for (const target of ['youtube','playgama']) {
       evidence[target] = await verify(browser, target, bundle);
     }
     if (process.env.PACKAGE_EVIDENCE_FILE) {

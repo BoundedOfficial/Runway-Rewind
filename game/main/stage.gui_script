@@ -1,220 +1,187 @@
-local platform = require "platform.platform"
-local artwork = require "portrait.artwork"
-local runner = require "treatments.runner"
-local sequence = require "treatments.level_one"
-local target_guidance = require "main.target_guidance"
+local platform = require 'platform.platform'
+local artwork = require 'portrait.artwork'
+local runner = require 'treatments.runner'
+local dental = require 'treatments.dental'
+local levels = require 'main.levels'
+local guidance = require 'main.target_guidance'
+local POINTER = hash('pointer')
+local INK = vmath.vector4(.25,.20,.36,1)
+local IVORY = vmath.vector4(1,.96,.91,1)
+local PASTEL = vmath.vector4(.84,.81,.94,1)
 
-local POINTER = hash("pointer")
-local INK = vmath.vector4(0.26, 0.13, 0.16, 1)
-local IVORY = vmath.vector4(1, 0.92, 0.84, 1)
-local REVEAL_HOLD = 0.65
-
-local function box(x, y, width, height)
-    return gui.new_box_node(vmath.vector3(x, y, 0), vmath.vector3(width, height, 0))
-end
-
-local function text(x, y, caption, color)
-    local node = gui.new_text_node(vmath.vector3(x, y, 0), caption)
-    gui.set_font(node, "prompt")
-    gui.set_color(node, color)
+local function box(x,y,w,h,parent)
+    local node=gui.new_box_node(vmath.vector3(x,y,0),vmath.vector3(w,h,0))
+    if parent then gui.set_parent(node,parent,false) end
     return node
 end
-
-local function button(x, y, width, caption)
-    local node = box(x, y, width, 54)
-    gui.set_color(node, IVORY)
-    gui.set_parent(text(0, 0, caption, INK), node)
+local function text(x,y,caption,parent,scale)
+    local node=gui.new_text_node(vmath.vector3(x,y,0),caption)
+    gui.set_font(node,'prompt'); gui.set_color(node,INK)
+    if parent then gui.set_parent(node,parent,false) end
+    gui.set_scale(node,vmath.vector3(scale or 1,scale or 1,1))
     return node
 end
-
-local function treatment_hud()
-    local background = box(320, 916, 254, 58)
-    gui.set_color(background, vmath.vector4(0.19, 0.12, 0.12, 0.94))
-    local label = text(0, 6, "", IVORY)
-    gui.set_parent(label, background)
-    local steps = {}
-    for i = 1, #sequence do
-        local step = box((i - (#sequence + 1) / 2) * 18, -12, 13, 4)
-        gui.set_parent(step, background)
-        steps[i] = step
-    end
-    gui.set_enabled(background, false)
-    local instruction = text(320, 200, "Drag to a pimple and hold", IVORY)
-    gui.set_enabled(instruction, false)
-    return {
-        background = background, label = label, steps = steps,
-        guides = target_guidance.create(sequence), instruction = instruction,
-    }
+local function rounded(node,color)
+    gui.set_texture(node,'dental'); gui.play_flipbook(node,'rounded'); gui.set_color(node,color or IVORY)
+    return node
 end
-
-local function starting_treatment()
+local function button(x,y,w,caption,parent)
+    local node=rounded(box(x,y,w,58,parent)); text(0,0,caption,node,.9); return node
+end
+local function hud()
+    local background=box(320,916,254,58)
+    gui.set_color(background,vmath.vector4(.19,.12,.12,.94))
+    local label=text(0,6,'',background); gui.set_color(label,IVORY)
+    local steps={}
+    for i=1,#levels[1].sequence do steps[i]=box((i-7)*18,-12,13,4,background) end
+    local instruction=text(320,200,'Drag to a pimple and hold'); gui.set_color(instruction,IVORY)
+    gui.set_enabled(background,false); gui.set_enabled(instruction,false)
+    return {background=background,label=label,steps=steps,instruction=instruction,guides=guidance.create(levels[1].sequence)}
+end
+local function hide_hud(self)
+    gui.set_enabled(self.hud.background,false); gui.set_enabled(self.hud.instruction,false)
+    guidance.clear(self.hud.guides); gui.set_enabled(self.tool,false)
+end
+local function show(self,screen)
+    self.screen=screen; self.pressed=nil
+    gui.set_enabled(self.menu_root,screen=='home' or screen=='selection' or screen=='loading')
+    gui.set_enabled(self.home,screen=='home'); gui.set_enabled(self.selection,screen=='selection'); gui.set_enabled(self.loading,screen=='loading')
+    gui.set_enabled(self.result,screen=='result'); gui.set_enabled(self.next,screen=='result' and self.level_index==1)
+    gui.set_enabled(self.confirm,screen=='confirm')
+    gui.set_enabled(self.menu,screen==nil and (self.runner~=nil or self.dental~=nil))
+    gui.move_above(self.menu_root,nil); gui.move_above(self.result,nil); gui.move_above(self.menu,nil); gui.move_above(self.confirm,nil)
+end
+local function clear_run(self)
+    if self.runner then runner.cancel(self.runner,true) end
+    self.runner=nil; self.reveal=nil; self.completed=0
+    dental.destroy(self.dental); self.dental=nil; hide_hud(self)
+end
+local function fixture_start(sequence)
     if sys.get_engine_info().is_debug then
-        local fixture = sys.get_config_string("runway.fixture")
-        local treatment_id = ({ makeup = "foundation", finish = "hair-styling" })[fixture]
-        for index, treatment in ipairs(sequence) do
-            if treatment.id == treatment_id then return index end
-        end
+        local id=({makeup='foundation',finish='hair-styling'})[sys.get_config_string('runway.fixture')]
+        for i,treatment in ipairs(sequence) do if treatment.id==id then return i end end
     end
     return 1
 end
-
-local function show_screen(self, screen)
-    self.screen = screen
-    gui.set_enabled(self.prompt, screen == "start")
-    gui.set_enabled(self.replay, screen == "result")
-    gui.set_enabled(self.next, screen == "result")
-    gui.set_enabled(self.end_screen, screen == "end")
+local function enter(self,index,replay)
+    clear_run(self); self.level_index=index; self.level=levels[index]; self.replay_requested=replay
+    platform.prepare_run(#self.level.sequence,self.level.id); show(self,'loading')
 end
-
-local function reset_stage(self)
-    self.runner, self.reveal_remaining, self.pressed = nil, nil, nil
-    self.first_unfinished = 1
-    platform.save_run(0)
-    show_screen(self, "start")
-    gui.set_enabled(self.hud.background, false)
-    target_guidance.clear(self.hud.guides)
-    gui.set_enabled(self.hud.instruction, false)
-    gui.set_enabled(self.tool, false)
-    msg.post("@render:", "reset_portrait", { completed = {} })
-    msg.post(".", "makeover_reset")
-end
-
-local function begin_run(self, first_unfinished)
-    self.completed_treatments = first_unfinished - 1
-    self.runner = runner.start(sequence, self.hud, self.tool, first_unfinished)
-    if first_unfinished > #sequence then
-        self.runner = nil
-        show_screen(self, "result")
+local function begin(self,boundary)
+    local replay=self.replay_requested or boundary==#self.level.sequence
+    if replay then boundary=0; platform.save_run(0,self.level.id) end
+    self.completed=boundary
+    if self.level.renderer=='dental' then self.dental=dental.start(boundary)
     else
-        show_screen(self, nil)
+        local first=boundary+1
+        if boundary==0 and not replay then first=fixture_start(self.level.sequence); self.completed=first-1 end
+        self.runner=runner.start(self.level.sequence,self.hud,self.tool,first)
     end
+    show(self,nil); msg.post('.','makeover_started')
 end
-
-local function synchronize_platform(self)
-    local state = platform.state()
-    if state.audio_enabled ~= self.audio_enabled then
-        sound.set_group_gain("master", state.audio_enabled and 1 or 0)
-        self.audio_enabled = state.audio_enabled
-    end
-    if state.pause_count ~= self.pause_count then
-        self.pause_count = state.pause_count
-        self.pressed = false
-        self.skip_input = true
-        if self.runner then runner.cancel(self.runner, true) end
-    end
-    if state.restart_count ~= self.restart_count and not state.paused then
-        self.restart_count = state.restart_count
-        self.pressed = false
-        self.skip_input = true
-        reset_stage(self)
+local function cancel_input(self)
+    self.pressed=nil
+    if self.runner then runner.cancel(self.runner,true) end
+    if self.dental then dental.cancel(self.dental) end
+end
+local function synchronize(self)
+    local state=platform.state()
+    if state.audio_enabled~=self.audio_enabled then sound.set_group_gain('master',state.audio_enabled and 1 or 0); self.audio_enabled=state.audio_enabled end
+    if state.pause_count~=self.pause_count then self.pause_count=state.pause_count; cancel_input(self); self.skip_input=true end
+    if state.restart_count~=self.restart_count and not state.paused then
+        self.restart_count=state.restart_count; cancel_input(self); self.skip_input=true
+        if self.level then enter(self,self.level_index,true) else show(self,'home') end
     end
     return state.paused
 end
-
 function init(self)
-    self.prompt = button(320, 72, 218, "Start makeover")
-    self.hud = treatment_hud()
-    self.tool = box(0, 0, 118, 118)
-    gui.set_texture(self.tool, "tools")
-    gui.set_enabled(self.tool, false)
-    self.replay = button(241, 72, 140, "Replay")
-    self.next = button(399, 72, 140, "Next")
-    self.end_screen = box(320, 480, 640, 960)
-    gui.set_color(self.end_screen, vmath.vector4(0.14, 0.12, 0.10, 0.90))
-    gui.set_parent(text(0, 38, "More makeovers coming soon", IVORY), self.end_screen)
-    self.end_replay = button(0, -38, 140, "Replay")
-    gui.set_parent(self.end_replay, self.end_screen)
-    show_screen(self, nil)
-    self.first_unfinished = starting_treatment()
-    self.pause_count, self.restart_count = 0, 0
-    msg.post(".", "acquire_input_focus")
-    platform.listen_for_editor_focus()
-    platform.prepare_run(#sequence)
+    self.hud=hud(); self.tool=box(0,0,118,118); gui.set_texture(self.tool,'tools'); gui.set_enabled(self.tool,false)
+    self.menu_root=box(320,480,640,960); gui.set_color(self.menu_root,PASTEL)
+    self.home=box(0,0,0,0,self.menu_root)
+    text(0,200,'RUNWAY',self.home,2); text(0,148,'REWIND',self.home,2)
+    text(0,80,'A fresh start awaits',self.home,.85)
+    self.play=button(0,0,240,'Play',self.home)
+    self.selection=box(0,0,0,0,self.menu_root)
+    text(0,225,'Choose a makeover',self.selection,1.25)
+    self.cards={}
+    for i,level in ipairs(levels) do
+        local card=rounded(box(i==1 and -120 or 120,0,232,300,self.selection),vmath.vector4(1,1,1,1))
+        local thumbnail=box(0,23,220,220,card); gui.set_texture(thumbnail,'dental'); gui.play_flipbook(thumbnail,level.thumbnail)
+        text(0,-106,level.title,card,.73); text(90,-133,tostring(i),card,.6); self.cards[i]=card
+    end
+    self.back=button(0,-270,170,'Home',self.selection)
+    self.loading=text(0,0,'Preparing makeover...',self.menu_root)
+    self.menu=button(570,50,108,'Levels')
+    self.result=box(0,0,0,0)
+    self.replay=button(180,72,130,'Replay',self.result)
+    self.result_levels=button(320,72,130,'Levels',self.result)
+    self.next=button(460,72,130,'Next',self.result)
+    self.confirm=box(320,480,640,960); gui.set_color(self.confirm,vmath.vector4(.16,.12,.25,.82))
+    rounded(box(0,0,590,290,self.confirm),PASTEL)
+    text(0,82,'Return to levels?',self.confirm,1.1)
+    text(0,28,'Completed treatments are saved.',self.confirm,.8)
+    text(0,-5,'This treatment will restart.',self.confirm,.8)
+    self.cancel=button(-100,-70,170,'Stay',self.confirm); self.leave=button(100,-70,170,'Leave',self.confirm)
+    self.pause_count,self.restart_count,self.clock=0,0,0
+    show(self,'home'); msg.post('.','acquire_input_focus'); platform.listen_for_editor_focus()
 end
-
-function update(self, dt)
-    if not self.interactive then
-        if not self.restored then
-            local restored = platform.initial_run()
-            if not restored.ready then return end
-            if restored.boundary and restored.boundary > 0 then
-                begin_run(self, restored.boundary + 1)
-            else
-                if restored.boundary == 0 then self.first_unfinished = 1 end
-                show_screen(self, "start")
-            end
-            self.restored = true
-            -- Draw the reconstructed stage before handing input to the player.
-            return
-        end
-        self.interactive = true
-        platform.stage_ready()
-    end
-    if synchronize_platform(self) then return end
-    -- Discard the first tick's accumulated wall time and pending engine input.
-    if self.skip_input then
-        self.skip_input = false
-        return
-    end
-    if self.runner then
-        local completed, exited = runner.update(self.runner, dt)
+function update(self,dt)
+    if not self.interactive then self.interactive=true; platform.stage_ready() end
+    if synchronize(self) then return end
+    if self.skip_input then self.skip_input=false; return end
+    self.clock=self.clock+dt
+    if self.screen=='home' then
+        local scale=1+.035*math.sin(self.clock*2.6); gui.set_scale(self.play,vmath.vector3(scale,scale,1))
+    elseif self.screen=='loading' then
+        local state=platform.initial_run(); if state.ready then begin(self,state.boundary or 0) end
+    elseif not self.screen then
+        local completed,exited
+        if self.runner then completed,exited=runner.update(self.runner,dt)
+        elseif self.dental then completed,exited=dental.update(self.dental,dt) end
         if completed then
-            self.completed_treatments = self.completed_treatments + 1
-            platform.save_run(self.completed_treatments)
-            msg.post(".", "treatment_completed", { treatment = completed })
+            self.completed=self.completed+1; platform.save_run(self.completed,self.level.id)
+            show(self,nil)
+            msg.post('.','treatment_completed',{treatment=tostring(completed)})
         end
-        if exited then
-            self.runner = nil
-            self.reveal_remaining = REVEAL_HOLD
-        end
-    elseif self.reveal_remaining then
-        self.reveal_remaining = self.reveal_remaining - dt
-        if self.reveal_remaining <= 0 then
-            self.reveal_remaining = nil
-            show_screen(self, "result")
-        end
+        if exited then self.runner=nil; self.reveal=.65; show(self,'revealing') end
+    elseif self.screen=='revealing' then
+        self.reveal=self.reveal-dt; if self.reveal<=0 then show(self,'result') end
     end
 end
-
-local function picked_button(self, x, y)
-    if self.screen == "start" and gui.pick_node(self.prompt, x, y) then
-        return self.prompt
-    elseif self.screen == "result" then
-        if gui.pick_node(self.replay, x, y) then return self.replay end
-        if gui.pick_node(self.next, x, y) then return self.next end
-    elseif self.screen == "end" and gui.pick_node(self.end_replay, x, y) then
-        return self.end_replay
-    end
+local function pick(self,x,y)
+    if self.screen=='home' then
+        if x>=200 and x<=440 and y>=451 and y<=509 then return self.play end
+    elseif self.screen=='selection' then
+        for _,card in ipairs(self.cards) do if gui.pick_node(card,x,y) then return card end end
+        if gui.pick_node(self.back,x,y) then return self.back end
+    elseif self.screen=='confirm' then
+        if gui.pick_node(self.cancel,x,y) then return self.cancel end
+        if gui.pick_node(self.leave,x,y) then return self.leave end
+    elseif self.screen=='result' then
+        for _,node in ipairs({self.replay,self.result_levels}) do if gui.pick_node(node,x,y) then return node end end
+        if self.level_index==1 and gui.pick_node(self.next,x,y) then return self.next end
+    elseif not self.screen and gui.pick_node(self.menu,x,y) then return self.menu end
 end
-
-function on_input(self, action_id, action)
-    if not self.interactive or synchronize_platform(self) or self.skip_input then return true end
-    if self.runner then
-        if (action_id == POINTER or not action_id) and action.x and action.y then
-            runner.input(self.runner, action.x, artwork.height - action.y,
-                action.pressed, action.released, action_id == POINTER)
-        end
-        return
-    end
-    if action_id ~= POINTER then
-        return
-    end
-    local picked = picked_button(self, action.x, action.y)
-    if action.pressed then
-        self.pressed = picked
-        return picked ~= nil
-    elseif action.released then
-        local activated = picked and picked == self.pressed
-        self.pressed = nil
-        if not activated then return end
-        if picked == self.prompt then
-            begin_run(self, self.first_unfinished)
-            msg.post(".", "makeover_started")
-        elseif picked == self.next then
-            show_screen(self, "end")
-        else
-            reset_stage(self)
-        end
+function on_input(self,id,action)
+    if not self.interactive or synchronize(self) or self.skip_input then return true end
+    if id~=POINTER and id~=nil then return end
+    if not action.x or not action.y then return end
+    local picked=pick(self,action.x,action.y)
+    if action.pressed and picked then self.pressed=picked; if not action.released then return true end end
+    if action.released and self.pressed then
+        local activated=picked==self.pressed; self.pressed=nil
+        if not activated then return true end
+        if picked==self.play or picked==self.leave or picked==self.result_levels then clear_run(self); show(self,'selection')
+        elseif picked==self.back then show(self,'home')
+        elseif picked==self.cards[1] then enter(self,1)
+        elseif picked==self.cards[2] or picked==self.next then enter(self,2)
+        elseif picked==self.replay then enter(self,self.level_index,true)
+        elseif picked==self.menu then cancel_input(self); show(self,'confirm')
+        elseif picked==self.cancel then show(self,nil) end
         return true
+    end
+    if not self.screen then
+        if self.runner then runner.input(self.runner,action.x,artwork.height-action.y,action.pressed,action.released,id==POINTER)
+        elseif self.dental then dental.input(self.dental,action.x,960-action.y,action.pressed,action.released) end
     end
 end

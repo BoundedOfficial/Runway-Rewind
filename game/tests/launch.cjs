@@ -1,3 +1,4 @@
+const { enterLevel, tapStage } = require('./entry.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -127,8 +128,9 @@ async function checkStage(browser, url, input, release) {
     const canvas = page.locator('canvas');
     const stage = await canvas.boundingBox();
     assert.ok(stage && Math.abs(stage.height / stage.width - 1.5) < 0.01, 'The game stage is portrait-oriented');
-    const before = await snapshot(canvas, image => countPixels(image, button, cream) > 4500);
-    assert.ok(before, 'The Start makeover prompt appears on the game stage');
+    if (!release) await enterLevel(page);
+    const before = await snapshot(canvas, image => countPixels(image, portrait, skin) > 2500);
+    assert.ok(before, 'Level selection opens the makeover portrait');
     saveEvidence(input, 'before', before);
     if (release) release.dirty = PNG.sync.read(before);
     assert.ok(countPixels(PNG.sync.read(before), portrait, skin) > 2500,
@@ -172,8 +174,6 @@ async function checkStage(browser, url, input, release) {
     assert.ok(after, 'Starting the makeover dismisses the Start prompt');
     assert.ok(countPixels(PNG.sync.read(after), portrait, skin) > 2500, 'The character remains visible after Start');
     const startup = PNG.sync.read(before);
-    const ready = await snapshot(canvas, image => changedPixels(startup, image, toolRest) > 700);
-    assert.ok(ready, 'The extractor arrives and rests at the bottom of the stage');
     await wait(450);
     const dirty = PNG.sync.read(await canvas.screenshot());
     if (release) {

@@ -1,6 +1,10 @@
 # Defold game
 
-A fresh Level 1 run opens on the dirty portrait. **Start makeover** introduces the extractor. Pick it up and guide its tip to each of the fourteen pimples. Keep holding while the extractor presses and lifts, then move to the next pimple. The next tools arrive in order for cleansing cream, face and neck wiping, robe cleanup, eyebrow shaving, lip scrub, and hydration. Foundation, brow fill, eye makeup, blush and contour, crimson lipstick, and hair styling complete the makeover. After the finished portrait reveal, **Replay** returns to the dirty portrait and **Next** opens the end-of-content screen.
+Every launch opens **Home**. **Play** opens two unlocked level cards. Selecting an unfinished level resumes its next incomplete treatment; selecting a completed level starts a fresh replay. The in-level **Levels** button confirms that leaving restarts only the unfinished treatment. Results offer **Replay** and **Levels**, plus **Next** from Level 1 to Level 2.
+
+Level 1 retains its thirteen makeover treatments. Level 2 is native Defold gameplay using generated raster artwork: collect nine food scraps and four animated worms into a petri dish, scrape crust, clear deposits, floss, apply paste, brush, suction, polish. Floss only removes fibers; brushing cleans yellow enamel. There is no mouthwash treatment.
+
+Both levels keep independent treatment checkpoints. Level 1's existing version-1 storage key and record remain valid; Level 2 uses its own key with the same validated record contract. Per-level storage workers retain pending-operation ownership across selection and replay. Unknown reads never authorize destructive writes. Menus and both gameplay renderers share the existing Playgama pause/audio/restart lifecycle.
 
 ## Windows host setup
 
@@ -22,6 +26,8 @@ The setup script verifies the SHA-256 of each upstream download before use.
 | [Eclipse Temurin](https://github.com/adoptium/temurin25-binaries/releases/tag/jdk-25.0.2%2B10) | JDK 25.0.2+10, Windows x64 | Java runtime for Bob |
 | [Playgama Bridge](https://github.com/Playgama/bridge/releases/tag/v2.4.1) | 2.4.1 | JavaScript SDK served with the game |
 | [Playwright Core](https://www.npmjs.com/package/playwright-core/v/1.58.2) and [PNGJS](https://www.npmjs.com/package/pngjs/v/7.0.0) | 1.58.2 and 7.0.0 | Host-only Chrome smoke check |
+
+The build also prepares Level 2 plates, tooth reveal tiles, trimmed tools/debris/effects and thumbnails from `game/artwork/level-2/assets/`. Level 2 owns a native GUI composition through the same level catalog; Level 1 keeps its established portrait-mask renderer. No browser prototype is embedded.
 
 The build imports the starting portrait, authored layers, and tool sprites from `game/artwork/level-1/assets/` and stages the checked Bridge download as a bundle resource. Artwork recipes in `game/assets/recipes/` select authored region IDs or wildcard patterns and map tool names to cells of the 4-by-4 tool sheet or to standalone images. The build generates Defold atlases and imports the original hit cells in `game/assets/generated/`. Open `game/game.project` in the matching Defold editor after preparing the artwork with the build script.
 
@@ -50,14 +56,10 @@ npm ci --prefix game/tests
 Expand-Archive .scratch/releases/runway-rewind-youtube.zip .scratch/releases/youtube -Force
 Expand-Archive .scratch/releases/runway-rewind-playgama.zip .scratch/releases/playgama -Force
 $env:PACKAGE_EVIDENCE_FILE = "$PWD/.scratch/releases/package-smoke.json"
-node game/tests/packages.cjs .scratch/releases/youtube .scratch/releases/playgama
+node game/tests/packages.cjs .scratch/releases/distribution
 ```
 
-The packager builds release mode once, then stages two ZIPs with `index.html`
-at the root. Both ship identical engine and game files. The target configs
-choose the appropriate Bridge adapter and disable analytics and remote
-configuration. Release mode excludes fixture settings, and the ZIPs omit
-the development controls script. `package-manifest.json` records the source
+The default packager builds a single auto-detect Playgama distribution ZIP with `index.html` at its root. Playgama handles downstream distribution, including YouTube. Compatibility-target packaging remains an explicit diagnostic option, not the default release workflow. Release mode excludes fixture settings and development controls. `package-manifest.json` records the source
 revision, worktree state, toolchain and Bridge hashes, per-file hashes, and ZIP
 hashes and sizes.
 
@@ -179,3 +181,7 @@ Hair styling counts brush travel over the loose hair on each side. Each side
 gradually fades into its styled artwork and settles after a few strokes.
 
 `portrait/portrait.render_script` uses a 640-by-960 committed target and cropped reveal targets. For local reveals, each eligible pointer segment draws an analytic soft brush into the corresponding target. Independent sampled hit cells govern completion, and the remaining region fades in smoothly. The renderer multiplies the already feathered atlas artwork by reveal coverage once and composites it with premultiplied blending. For temporary products such as cream, it retains the pre-product portrait and builds the wipe result on that surface. The wipe reveals the clean result under the brush, and the committed surface switches to it after all regions settle.
+
+## Multi-level verification
+
+`navigation.cjs` exercises Home/selection, per-level storage and delayed-save isolation through the built browser game and existing platform fixtures. `dental.cjs` plays all eight treatments, mixes touch/mouse collection, cancels exit after a collected item, verifies floss/brush color behavior, reloads every treatment boundary, and checks replay. Existing Level 1 fixtures now enter through Home and selection. The release acceptance check verifies one distribution artifact against both existing host simulations.

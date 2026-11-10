@@ -1,3 +1,4 @@
+const { enterLevel, tapStage } = require('./entry.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -13,8 +14,8 @@ const blemish = { x: 246, y: 219, width: 22, height: 28 };
 const cheek = { x: 185, y: 425, width: 102, height: 85 };
 const otherCheek = { x: 353, y: 425, width: 102, height: 85 };
 const portrait = { x: 55, y: 150, width: 530, height: 610 };
-const replay = { x: 194, y: 874, width: 94, height: 27 };
-const next = { x: 352, y: 874, width: 94, height: 27 };
+const replay = { x: 133, y: 874, width: 94, height: 27 };
+const next = { x: 413, y: 874, width: 94, height: 27 };
 const leftHair = [[90, 730], [91, 440], [171, 440], [171, 385], [111, 385],
   [111, 330], [180, 330], [180, 275], [110, 275], [118, 220], [174, 220], [163, 170], [126, 170]];
 const rightHair = [[553, 730], [549, 440], [469, 440], [469, 385], [529, 385],
@@ -41,7 +42,7 @@ async function stroke(page, points, hold = 32) {
 }
 
 async function ready(page) {
-  await page.locator('#game-loading').waitFor({ state: 'detached', timeout: 7000 });
+  await enterLevel(page);
 }
 
 async function open(browser, url, check) {
@@ -152,7 +153,7 @@ async function mockBridgeStorage(page, get, set) {
           on: () => {},
           sendMessage: async () => {},
         },
-        storage: { get: () => window.hostLoad(), set: (_, value) => window.hostSave(value) },
+        storage: { get: key => window.hostLoad(key), set: (key, value) => window.hostSave(value, key) },
       };
     `,
   }));
@@ -197,10 +198,7 @@ async function checkFailedLoad(page, url) {
 
   await page.reload();
   await ready(page);
-  const finished = await frame(page, null, 'recovered-completed-portrait');
-  await page.mouse.click(399, 888, { delay: 70 });
-  await wait(150);
-  assert.ok(!(await frame(page)).equals(finished), 'The protected completion still restores with Next after reload');
+  assert.ok((await frame(page, blemish)).equals(dirty), 'Selecting the protected completed level starts a fresh replay');
 }
 
 async function checkSlowLoad(page, url) {
@@ -285,30 +283,13 @@ async function checkFailedSave(page, url) {
 
   reloading = true;
   await page.reload();
-  await waitFor(reloadStarted, 'Reload did not request the completed makeover');
-  assert.ok(await page.locator('#game-loading').isVisible(), 'The loading state stays visible while awaiting the save');
-  await page.mouse.move(241, 888);
-  await page.mouse.down();
+  const entering = ready(page);
+  await waitFor(reloadStarted, 'Selection did not request the completed makeover');
   allowReload.resolve();
-  await ready(page);
-  await page.mouse.up();
-  await wait(120);
-  assert.ok((await frame(page, portrait)).equals(finished), 'The restored finished portrait matches the live result');
-  assert.ok(lightPixels(await frame(page, replay)) > 1500, 'A press before readiness cannot accidentally Replay');
-  assert.ok(lightPixels(await frame(page, next)) > 1500, 'The returning player can select Next');
-  await frame(page, null, 'completed-portrait-after-save-retry');
+  await entering;
+  await waitFor(restarted, 'Selecting the completed level did not save a replay reset');
+  assert.ok(!(await frame(page, portrait)).equals(finished), 'Completed level selection begins a fresh replay');
 
-  const restart = page.getByRole('button', { name: 'Restart makeover', exact: true });
-  if (await restart.count()) {
-    page.once('dialog', dialog => dialog.accept());
-    await restart.click();
-    await waitFor(restarted, 'Confirmed development restart did not save the reset');
-    const dirty = await frame(page, portrait);
-    await page.reload();
-    await ready(page);
-    assert.ok(!dirty.equals(finished) && (await frame(page, portrait)).equals(dirty),
-      'Confirmed development restart restores the dirty portrait on reload');
-  }
 }
 
 async function checkReplayOrdering(page, url) {
@@ -331,8 +312,8 @@ async function checkReplayOrdering(page, url) {
   await ready(page);
   await finishHair(page);
   await waitFor(finishing, 'The completion save did not reach the platform');
-  await page.mouse.click(241, 888, { delay: 70 });
-  await wait(150);
+  await page.mouse.click(180, 888, { delay: 70 });
+  await wait(900);
   const dirty = await frame(page, portrait);
   allowFinish.resolve();
   await waitFor(reset, 'Replay did not save the reset after the completion write');
@@ -376,7 +357,8 @@ async function main() {
   }
 }
 
-main().catch(error => {
+module.exports = { mockBridgeStorage, deferred, waitFor, savedRun };
+if (require.main === module) main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });

@@ -31,8 +31,8 @@ function M.state()
     return json.decode(html5.run("JSON.stringify(window.runwayPlatform.state())"))
 end
 
-function M.prepare_run(treatment_count)
-    if html5 then html5.run("window.runwayPlatform.prepareRun(" .. treatment_count .. ")") end
+function M.prepare_run(treatment_count, level)
+    if html5 then html5.run("window.runwayPlatform.prepareRun(" .. treatment_count .. "," .. json.encode(level or "level-1") .. ")") end
 end
 
 function M.initial_run()
@@ -40,8 +40,8 @@ function M.initial_run()
     return json.decode(html5.run("JSON.stringify(window.runwayPlatform.initialRun())"))
 end
 
-function M.save_run(completed_treatments)
-    if html5 then html5.run("window.runwayPlatform.saveRun(" .. completed_treatments .. ")") end
+function M.save_run(completed_treatments, level)
+    if html5 then html5.run("window.runwayPlatform.saveRun(" .. completed_treatments .. "," .. json.encode(level or "level-1") .. ")") end
 end
 
 return M

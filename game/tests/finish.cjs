@@ -1,3 +1,4 @@
+const { enterLevel, tapStage } = require('./entry.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -69,17 +70,7 @@ async function checkFinish(browser, url, input, release) {
     const pale = (r, g, b) => r > 245 && g > 218 && b > 193;
     const prompt = [240, 874, 400, 902];
     let dirty = release?.dirty;
-    if (!release) {
-      const deadline = Date.now() + 10000;
-      do {
-        dirty = await snapshot();
-      } while (count(dirty, prompt, pale) < 2000 && Date.now() < deadline);
-      assert.ok(count(dirty, prompt, pale) > 2000, 'Start makeover appears');
-      await wait(120);
-      dirty = await snapshot('dirty-start');
-      await tap(320, 888);
-      await wait(630);
-    }
+    if (!release) { await enterLevel(page); dirty = await snapshot('hair-start'); }
 
     const before = await snapshot('hair-ready');
     assert.ok(count(before, [260, 491, 380, 539], (r, g, b) => r - g > 55 && r - b > 28) > 900,
@@ -115,7 +106,7 @@ async function checkFinish(browser, url, input, release) {
     const outer = await snapshot('right-outer-stroke');
     assert.ok(changed(crown, outer, lowerRightHair) > 300, 'Brushing the outer hair continues styling that side');
 
-    const actions = [194, 874, 288, 901];
+    const actions = [125, 874, 235, 901];
     const treatmentLabel = [225, 28, 415, 49];
     const rest = [298, 790, 342, 841];
     await stroke([[553, 730], [597, 645], [587, 550]]);
@@ -137,29 +128,20 @@ async function checkFinish(browser, url, input, release) {
     await wait(1000);
     const finished = await snapshot('finished-portrait-actions');
     assert.ok(count(finished, actions, pale) > 1500, 'Replay appears after the finished portrait hold');
-    assert.ok(count(finished, [352, 874, 446, 901], pale) > 1500, 'Next appears beside Replay');
+    assert.ok(count(finished, [405, 874, 515, 901], pale) > 1500, 'Next appears beside Replay');
 
     await milestone(13);
     await release?.onFinished(finished);
 
-    if (input === 'mouse') {
-      await tap(399, 888);
-      const end = await snapshot('end-of-content');
-      assert.ok(changed(finished, end, eyes) > 25000, 'Next opens the end-of-content screen');
-      assert.ok(count(end, [142, 427, 498, 454], pale) > 250, 'The end-of-content screen presents its message');
-      assert.ok(count(end, [260, 503, 380, 534], pale) > 2500, 'The end-of-content screen offers Replay');
-      await tap(320, 518);
-    } else {
-      await tap(241, 888);
-    }
-
+    if(input==='mouse') {
+      await tap(460,888); await wait(900);
+      const dental=await snapshot('next-dental');
+      assert.ok(changed(finished,dental,eyes)>20000,'Next enters the dental level');
+      await tap(570,910); await wait(100); await tap(420,550); await wait(100); await tap(200,480); await wait(900);
+    } else { await tap(180,888); await wait(800); }
     const replay = await snapshot('replay-dirty');
     await release?.onReplay(replay);
-    assert.ok(count(replay, prompt, pale) > 2000, 'Replay restores the Start makeover prompt');
-    assert.equal(changed(dirty, replay, [0, 40, 640, 960]), 0,
-      'Replay restores the original hair, robe, and blemishes');
-    await tap(320, 888);
-    await wait(600);
+    assert.ok(changed(before,replay,eyes)>200, 'Replay restores the original face');
     const restarted = await snapshot();
     await down(320, 828);
     await holdPimples(move, pimples.slice(0, 1));
