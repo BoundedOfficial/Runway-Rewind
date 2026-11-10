@@ -131,9 +131,18 @@ async function open(browser, url, target, host, check, pageOptions = {}) {
     // Simulate an unrelated legacy browser value. The cloud record owns progress.
     if (localStorage.getItem(key) === null) localStorage.setItem(key, 'legacy-local-value');
   }, { key, cloud: host.cloud !== false, pauseAtStartup: host.pauseAtStartup === true });
-  await page.route('**/*', route => {
+  await page.route('**/*', async route => {
     const address = route.request().url();
     requests.push(address);
+    // Playgama's downstream host wrapper supplies the required YouTube SDK.
+    // Simulate that wrapper around the same auto-detect distribution, without
+    // producing or modifying a separate YouTube release artifact.
+    if (target === 'youtube' && address === url) {
+      const response = await route.fetch();
+      const body = (await response.text()).replace('<script src="playgama-bridge.js">',
+        '<script src="https://www.youtube.com/game_api/v1"></script><script src="playgama-bridge.js">');
+      return route.fulfill({response, body});
+    }
     if (address.endsWith('/playgama-bridge-config.json')) return route.fulfill({contentType:'application/json',body:JSON.stringify({forciblySetPlatformId:target,sendAnalyticsEvents:false,debug:false})});
     if (address === sdk) return route.fulfill({
       contentType: 'application/javascript',
