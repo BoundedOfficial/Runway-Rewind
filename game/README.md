@@ -12,11 +12,12 @@ Use PowerShell 7, Node.js 24 and Chrome. Run from the repository root:
 
 ```powershell
 ./game/scripts/setup-toolchain.ps1
+npm ci --prefix game/tests
 ./game/scripts/build-html5.ps1
 node game/scripts/serve.cjs
 ```
 
-Open [the local preview](http://127.0.0.1:5174/). The bundle is in `.scratch/html5/Runway Rewind`. Use `-BundleOutput` to choose a different bundle parent directory and `-Variant release` for a release-mode preview. Pass the bundle directory as the first argument to `serve.cjs` when serving a non-default build. In a linked worktree, both PowerShell scripts accept `-Toolchain <path>` for reuse of the main checkout's `.scratch/toolchain`.
+Open [the local preview](http://127.0.0.1:5174/). The bundle is in `game/dist/html5/Runway Rewind`. Use `-BundleOutput` to choose a different bundle parent directory and `-Variant release` for a release-mode preview. Pass the bundle directory as the first argument to `serve.cjs` when serving a non-default build. In a linked worktree, both PowerShell scripts accept `-Toolchain <path>` for reuse of the main checkout's `.cache/toolchain`.
 
 The setup script verifies the SHA-256 of each upstream download before use.
 
@@ -46,16 +47,16 @@ Delivery goes through Playgama, including distribution to YouTube. The default p
 Use `./game/scripts/package-html5.ps1` for this distribution archive. The optional `-CompatibilityTargets` switch produces the two forced-platform archives used by the historical compatibility checks below; those archives are not publishing handoffs.
 
 Run from the checkout you intend to package. Setup is shared with the preview.
-In a linked worktree, supply the main checkout's `.scratch/toolchain` to
-`-Toolchain` and its `.scratch/releases` to `-ReleaseOutput` to keep the
+In a linked worktree, supply the main checkout's `.cache/toolchain` to
+`-Toolchain` and its `game/dist/releases` to `-ReleaseOutput` to keep the
 archives after worktree cleanup.
 
 ```powershell
 ./game/scripts/package-html5.ps1
 npm ci --prefix game/tests
-Expand-Archive .scratch/releases/runway-rewind-playgama.zip .scratch/releases/distribution -Force
-$env:PACKAGE_EVIDENCE_FILE = "$PWD/.scratch/releases/package-smoke.json"
-node game/tests/packages.cjs .scratch/releases/distribution
+Expand-Archive game/dist/releases/runway-rewind-playgama.zip game/dist/releases/distribution -Force
+$env:PACKAGE_EVIDENCE_FILE = "$PWD/game/dist/releases/package-smoke.json"
+node game/tests/packages.cjs game/dist/releases/distribution
 ```
 
 The default packager builds a single auto-detect Playgama distribution ZIP with `index.html` at its root. Playgama handles downstream distribution, including YouTube. Compatibility-target packaging remains an explicit diagnostic option, not the default release workflow. Release mode excludes fixture settings and development controls. `package-manifest.json` records the source
@@ -137,8 +138,8 @@ sponge. This fixture is selected at build time and the build script rejects it
 in release builds.
 
 ```powershell
-./game/scripts/build-html5.ps1 -Fixture makeup -BundleOutput .scratch/makeup
-node game/tests/makeup.cjs ".scratch/makeup/Runway Rewind"
+./game/scripts/build-html5.ps1 -Fixture makeup -BundleOutput game/dist/makeup
+node game/tests/makeup.cjs "game/dist/makeup/Runway Rewind"
 ```
 
 The check exercises foundation, full brow arches, the combined eye look, blush
@@ -158,8 +159,8 @@ Set `STAGE_EVIDENCE_DIR` to capture the partial and finished portrait and
 end-of-content screen.
 
 ```powershell
-./game/scripts/build-html5.ps1 -Fixture finish -BundleOutput .scratch/finish
-node game/tests/finish.cjs ".scratch/finish/Runway Rewind"
+./game/scripts/build-html5.ps1 -Fixture finish -BundleOutput game/dist/finish
+node game/tests/finish.cjs "game/dist/finish/Runway Rewind"
 ```
 
 ### Runner and renderer
@@ -184,7 +185,7 @@ gradually fades into its styled artwork and settles after a few strokes.
 
 `navigation.cjs` exercises Home/selection, per-level storage and delayed-save isolation through the built browser game and existing platform fixtures. `dental.cjs` plays all eight treatments, mixes touch/mouse collection, cancels exit after a collected item, verifies floss/brush color behavior, reloads every treatment boundary, and checks replay. Existing Level 1 fixtures now enter through Home and selection. The release acceptance check verifies one distribution artifact against both existing host simulations.
 
-Run `./game/scripts/test-all.ps1` for the complete debug, fixture, and single-package browser suite. Evidence and results are written under `.scratch/level2/full-suite/`.
+Run `./game/scripts/test-all.ps1` for the complete debug, fixture, and single-package browser suite. Evidence and results are written under `game/dist/test-results/`.
 
 ### Gesture and interaction revision
 
@@ -199,3 +200,7 @@ The dental portrait shader composites full registered plates in one draw and sha
 Tool arrivals start off-screen; releases smoothly return to rest, and exits start from the displayed position and rotation. `dental-motion.cjs` checks rendered tool continuity on release. `dental-forgiving.cjs` checks outer-edge contact, partial final toothpaste coverage, and the polish color change.
 
 `dental-pickup.cjs` checks fast mouse/touch drags from the head, middle, and tail, a stable held pose, invalid-drop recovery, and collection completion.
+
+## Local files and cleanup
+
+Reusable build scripts live in `game/scripts`, browser checks and their pinned npm dependencies in `game/tests`, and artwork-authoring tools in `tools/layers`. The checked compiler, Java runtime, and Bridge download are installed in ignored `.cache/toolchain`; `setup-toolchain.ps1` recreates them. All generated previews, packages, and test evidence belong in ignored `game/dist`. These outputs can be deleted and rebuilt. No running game or build/test command depends on `.scratch` or the retired browser prototype.

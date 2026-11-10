@@ -477,7 +477,7 @@ async function checkStage(browser, url, input, release) {
 }
 
 async function main() {
-  const bundle = process.argv[2] ?? path.join(__dirname, '../../.scratch/html5/Runway Rewind');
+  const bundle = process.argv[2] ?? path.join(__dirname, '../dist/html5/Runway Rewind');
   const server = preview(bundle);
   await new Promise((resolve, reject) => {
     server.once('error', reject);

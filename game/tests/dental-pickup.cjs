@@ -7,7 +7,7 @@ const {enterLevel}=require('./entry.cjs');
 const worms=[[155,394],[326,412],[487,407],[260,537],[80,396],[565,400],[130,500],[425,530]];
 const point=([x,y])=>[-70.4+x*1.22,-97.9+y*1.22];
 (async()=>{
- const server=preview(process.argv[2]||'.scratch/html5/Runway Rewind');await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const server=preview(process.argv[2]||'game/dist/html5/Runway Rewind');await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
  try{
   const p=await browser.newPage({viewport:{width:640,height:960},hasTouch:true});const errors=[];p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(/ERROR:/.test(m.text()))errors.push(m.text())});

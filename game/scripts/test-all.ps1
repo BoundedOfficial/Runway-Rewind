@@ -1,10 +1,12 @@
-param([string]$Toolchain = (Join-Path $PSScriptRoot '../../.scratch/toolchain'))
+param([string]$Toolchain = (Join-Path $PSScriptRoot '../../.cache/toolchain'))
 $ErrorActionPreference = 'Stop'
 $repository = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 Set-Location $repository
-$env:NODE_PATH = Join-Path (Resolve-Path $Toolchain) 'smoke/node_modules'
+if (!(Test-Path (Join-Path $PSScriptRoot '../tests/node_modules/playwright-core'))) {
+    throw 'Install test dependencies first: npm ci --prefix game/tests'
+}
 $results = [Collections.Generic.List[object]]::new()
-$output = Join-Path $repository '.scratch/level2/full-suite'
+$output = Join-Path $repository 'game/dist/test-results'
 New-Item -ItemType Directory -Force $output | Out-Null
 $env:STAGE_EVIDENCE_DIR = Join-Path $output 'evidence'
 New-Item -ItemType Directory -Force $env:STAGE_EVIDENCE_DIR | Out-Null
@@ -19,8 +21,8 @@ function Check-Game($name, $testArguments) {
 & "$PSScriptRoot/build-html5.ps1" -Toolchain $Toolchain | Out-Null
 & "$PSScriptRoot/build-html5.ps1" -Toolchain $Toolchain -Fixture makeup -BundleOutput "$output/makeup" | Out-Null
 & "$PSScriptRoot/build-html5.ps1" -Toolchain $Toolchain -Fixture finish -BundleOutput "$output/finish" | Out-Null
-$bundle = '.scratch/html5/Runway Rewind'
-foreach($name in @('navigation','dental','dental-remaining','dental-blending','launch','extraction','lifecycle','persistence','presentation')) {
+$bundle = 'game/dist/html5/Runway Rewind'
+foreach($name in @('navigation','dental','dental-remaining','dental-blending','dental-pickup','dental-motion','dental-forgiving','dental-tutorial','launch','extraction','lifecycle','persistence','presentation')) {
     Check-Game $name @("game/tests/$name.cjs",$bundle)
 }
 Check-Game 'makeup' @('game/tests/makeup.cjs',"$output/makeup/Runway Rewind")

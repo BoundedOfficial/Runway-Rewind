@@ -219,7 +219,7 @@ async function focusedPresentation(browser, root) {
 }
 
 async function main() {
-  const root = path.resolve(process.argv[2] ?? '.scratch/releases');
+  const root = path.resolve(process.argv[2] ?? 'game/dist/releases');
   const modes = process.argv.slice(3);
   assert.ok(modes.every(mode => ['mouse', 'touch', 'presentation'].includes(mode)), 'Modes: mouse, touch, presentation');
   const run = mode => modes.length === 0 || modes.includes(mode);

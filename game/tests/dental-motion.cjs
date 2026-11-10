@@ -4,7 +4,7 @@ const {setTimeout:wait}=require('node:timers/promises');
 const {preview}=require('../scripts/serve.cjs');
 const {enterLevel}=require('./entry.cjs');
 (async()=>{
- const server=preview(process.argv[2]||'.scratch/html5/Runway Rewind');await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const server=preview(process.argv[2]||'game/dist/html5/Runway Rewind');await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
  try{
  const page=await browser.newPage({viewport:{width:640,height:960}});

@@ -9,7 +9,7 @@ const key='runway-rewind.level-2';
 const point=([x,y])=>[-70.4+x*1.22,-97.9+y*1.22];
 const paste=[[135,332],[278,342],[410,340],[506,330],[178,580],[310,593],[442,580]];
 (async()=>{
- const server=preview(process.argv[2]||'.scratch/html5/Runway Rewind');await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const server=preview(process.argv[2]||'game/dist/html5/Runway Rewind');await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
  try{
   const page=await browser.newPage({viewport:{width:640,height:960}});const url=`http://127.0.0.1:${server.address().port}`;
@@ -30,6 +30,6 @@ const paste=[[135,332],[278,342],[410,340],[506,330],[178,580],[310,593],[442,58
   let lift=0,count=0;
   for(const p of [[275,350],[378,350],[225,510],[359,510]]){const [x,y]=point(p).map(Math.round),i=(y*640+x)*4;lift+=polished.data[i+2]-clean.data[i+2];count++;}
   console.log({meanBlueLift:lift/count});assert.ok(lift/count>25,'Polish visibly lifts enamel to a brighter, cooler white');
-  fs.mkdirSync('.scratch/level2/tuning',{recursive:true});fs.writeFileSync('.scratch/level2/tuning/clean.png',PNG.sync.write(clean));fs.writeFileSync('.scratch/level2/tuning/polished.png',PNG.sync.write(polished));
+  fs.mkdirSync('game/dist/test-results/tuning',{recursive:true});fs.writeFileSync('game/dist/test-results/tuning/clean.png',PNG.sync.write(clean));fs.writeFileSync('game/dist/test-results/tuning/polished.png',PNG.sync.write(polished));
  }finally{await browser.close();server.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

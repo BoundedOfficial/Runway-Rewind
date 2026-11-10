@@ -236,7 +236,7 @@ async function checkHeldStroke(browser, url, touch, development) {
 
 async function main() {
   const args = process.argv.slice(2);
-  const bundle = args.find(arg => arg !== '--release') ?? path.join(__dirname, '../../.scratch/html5/Runway Rewind');
+  const bundle = args.find(arg => arg !== '--release') ?? path.join(__dirname, '../dist/html5/Runway Rewind');
   const development = !args.includes('--release');
   const server = preview(bundle);
   await new Promise((resolve, reject) => {

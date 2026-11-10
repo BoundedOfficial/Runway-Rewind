@@ -15,7 +15,7 @@ const key='runway-rewind.level-2';
 async function boundary(page){return page.evaluate(key=>JSON.parse(localStorage.getItem(key))?.completedTreatments??0,key)}
 async function enamel(page){const im=PNG.sync.read(await page.locator('canvas').screenshot());const [x,y]=point([275,350]).map(Math.round);return [...im.data.subarray((y*im.width+x)*4,(y*im.width+x)*4+3)]}
 (async()=>{
- const server=preview(process.argv[2]||path.join(__dirname,'../../.scratch/html5/Runway Rewind'));
+ const server=preview(process.argv[2]||path.join(__dirname,'../dist/html5/Runway Rewind'));
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
  try{

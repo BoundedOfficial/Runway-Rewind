@@ -13,7 +13,7 @@ async function home(page) {
   assert(r > 170 && g > 150 && b > 190, 'Home has a pastel backdrop, not an active portrait');
 }
 (async () => {
-  const server = preview(process.argv[2] || path.join(__dirname, '../../.scratch/html5/Runway Rewind'));
+  const server = preview(process.argv[2] || path.join(__dirname, '../dist/html5/Runway Rewind'));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
   try {

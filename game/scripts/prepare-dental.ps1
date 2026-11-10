@@ -49,7 +49,7 @@ $original=[Drawing.Bitmap]::new((Join-Path $Project 'artwork/level-1/assets/plat
 $plate=Resize-Image $original 640 960
 $crop=$plate.Clone([Drawing.Rectangle]::new(0,80,640,640),[Drawing.Imaging.PixelFormat]::Format32bppArgb)
 $thumb=Resize-Image $crop 220 220; Save-Sprite $thumb 'thumbnail-1'; $thumb.Dispose(); $crop.Dispose(); $plate.Dispose(); $original.Dispose()
-foreach($sheet in @(@('tools',3,3),@('food',2,2),@('worms',3,2),@('treatment-fx',3,2))) {
+foreach($sheet in @(@('tools',3,3),@('worms',3,2),@('treatment-fx',3,2))) {
     $original=[Drawing.Bitmap]::new((Join-Path $source "$($sheet[0]).png"))
     $cw=[int][Math]::Floor($original.Width/$sheet[1]); $ch=[int][Math]::Floor($original.Height/$sheet[2])
     for($i=0;$i -lt $sheet[1]*$sheet[2];$i++) {
