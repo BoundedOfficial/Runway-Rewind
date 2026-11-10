@@ -1,6 +1,6 @@
 # Level 2 transfer and basic navigation
 
-Status: all player-flow decisions agreed. Implementation plan ready for review; implementation has not begun.
+Status: implemented in Defold; final browser release verification and PR preparation in progress.
 
 Published implementation specification: [GitHub issue #15](https://github.com/BoundedOfficial/Runway-Rewind/issues/15), labeled `ready-for-agent`.
 
