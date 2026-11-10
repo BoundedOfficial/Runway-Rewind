@@ -12,7 +12,7 @@ local WORMS = {{155,394},{326,412},{487,407},{260,537}}
 M.sequence = {
     {id="collect", label="Clear the leftovers", tool=1, mode="collect", plate="dirty"},
     {id="scale", label="Crack the crust", tool=2, mode="stroke", plate="dirty", reveal="descaled", effect="treatment-fx-2", travel=125},
-    {id="drill", label="Clean the tight spots", tool=3, mode="hold", plate="descaled", effect="treatment-fx-2", remove_effect=true, targets=GAPS, radius=24, duration=.55},
+    {id="drill", label="Clean the tight spots", tool=3, mode="hold", plate="descaled", effect="treatment-fx-2", remove_effect=true, targets=GAPS, radius=24, duration=.85},
     {id="floss", label="Floss the gaps", tool=4, mode="stroke", plate="descaled", effect="treatment-fx-3", remove_effect=true, targets=GAPS, radius=30, travel=125, tip=.08},
     {id="paste", label="A little mint magic", tool=5, mode="hold", plate="descaled", targets=PASTE, paste="apply"},
     {id="brush", label="Brush it all away", tool=6, mode="stroke", plate="descaled", reveal="clean", travel=165, paste="remove", foam="apply", tip=.1, sway=24},
@@ -49,7 +49,7 @@ end
 local function begin(self,index)
     if self.root then gui.delete_node(self.root) end
     self.root=gui.new_box_node(vmath.vector3(),vmath.vector3())
-    self.index=index; self.work={}; self.items={}; self.tiles={}; self.effects={}; self.pastes={}; self.bubbles={}
+    self.index=index; self.work={}; self.contact={}; self.travel={}; self.items={}; self.tiles={}; self.effects={}; self.pastes={}; self.bubbles={}
     self.pointer=nil; self.grip=nil; self.arrival=0; self.transition=nil; self.idle=0
     self.food_count=0; self.worm_count=0
     self.treatment=M.sequence[index]
@@ -128,28 +128,38 @@ local function hit_segment(x,y,previous,target,radius)
     return distance(previous[1]+dx*t,previous[2]+dy*t,target[1],target[2])<radius
 end
 local function render_progress(self)
-    local index=self.index
     local treatment=self.treatment
-    for i,node in ipairs(self.tiles) do alpha(node,self.work[i] or 0) end
-    if treatment.remove_effect then for i,node in ipairs(self.effects) do alpha(node,1-self.work[i]) end end
+    for i,node in ipairs(self.tiles) do
+        local amount=self.work[i] or 0
+        -- Keep a visible stained/unpolished remainder until this tooth is done.
+        alpha(node,amount>=1 and 1 or amount*.7)
+    end
+    -- Unfinished debris must remain legible, even after an almost-complete pass.
+    -- Remove it only when that individual target is actually finished.
+    if treatment.remove_effect then
+        for i,node in ipairs(self.effects) do
+            alpha(node,self.work[i]>=1 and 0 or math.max(.65,1-self.work[i]*.35))
+        end
+    end
     if treatment.paste=="apply" then for i,node in ipairs(self.pastes) do alpha(node,self.work[i]) end end
     if treatment.paste=="remove" then
         for i,node in ipairs(self.pastes) do
             local nearest=1
             for j,p in ipairs(TEETH) do if distance(p[1],p[2],PASTE[i][1],PASTE[i][2])<distance(TEETH[nearest][1],TEETH[nearest][2],PASTE[i][1],PASTE[i][2]) then nearest=j end end
-            alpha(node,1-self.work[nearest])
+            alpha(node,self.work[nearest]>=1 and 0 or math.max(.6,1-self.work[nearest]))
         end
     end
-    for i,node in ipairs(self.bubbles) do local a=treatment.foam=="apply" and self.work[i] or 1-self.work[i]; alpha(node,a); gui.set_scale(node,vmath.vector3(math.sqrt(a),math.sqrt(a),1)) end
+    for i,node in ipairs(self.bubbles) do
+        local amount=self.work[i]
+        local a=treatment.foam=="apply" and (amount>=1 and 1 or amount*.45)
+            or (amount>=1 and 0 or math.max(.6,1-amount))
+        alpha(node,a); gui.set_scale(node,vmath.vector3(math.sqrt(a),math.sqrt(a),1))
+    end
 end
 function M.update(self,dt)
     self.clock=self.clock+dt; self.arrival=self.arrival+dt
     if self.index>#M.sequence then return nil,true end
     if self.transition then
-        if self.treatment.mode~='collect' then
-            for i,value in ipairs(self.work) do self.work[i]=math.min(1,value+dt*3) end
-            render_progress(self)
-        end
         gui.set_enabled(self.gesture,false)
         self.transition=self.transition-dt
         if self.transition<=0 then local completed=self.index; begin(self,completed+1); return completed,completed==#M.sequence end
@@ -175,15 +185,22 @@ function M.update(self,dt)
             local speed=self.previous and distance(x,y,self.previous[1],self.previous[2]) or 0
             local hold=self.treatment.mode=="hold"
             local reach=(self.treatment.radius or 48)*1.15
-            local progress=0
+            local complete=true
             for i,p in ipairs(targets(self.treatment)) do
                 if self.work[i]<1 and hit_segment(x,y,self.previous,p,reach) then
-                    local amount=hold and dt/(self.treatment.duration or .5) or math.min(speed,50)/(self.treatment.travel or 125)
-                    self.work[i]=math.min(1,self.work[i]+amount)
+                    -- A fast sweep may touch several targets, but cannot finish
+                    -- them instantly: each needs sustained contact and movement.
+                    if hold then
+                        self.work[i]=math.min(1,self.work[i]+dt/(self.treatment.duration or .85))
+                    else
+                        self.contact[i]=(self.contact[i] or 0)+dt
+                        self.travel[i]=(self.travel[i] or 0)+math.min(speed,50)
+                        self.work[i]=math.min(1,self.contact[i]/.75,self.travel[i]/(self.treatment.travel or 125))
+                    end
                 end
-                progress=progress+self.work[i]
+                if self.work[i]<1 then complete=false end
             end
-            if progress/#self.work>=.75 then finish(self) end
+            if complete then finish(self) end
         end
         self.previous={x,y}
     end

@@ -45,11 +45,11 @@ async function enamel(page){const im=PNG.sync.read(await page.locator('canvas').
     const points=stage===3||stage===4?gaps:stage===5?paste:teeth;
     let treated=0;
     for(const p of points){if(await boundary(page)>=stage)break;treated++;await page.mouse.move(...point(p));await page.mouse.down();
-     if([3,5,7,8].includes(stage))await wait(640);
-     else for(let k=0;k<9;k++){await page.mouse.move(...point([p[0]+(k%2?-25:25),p[1]]));await wait(40)}
+     if([3,5,7,8].includes(stage))await wait(1050);
+     else for(let k=0;k<26;k++){await page.mouse.move(...point([p[0]+(k%2?-25:25),p[1]]));await wait(40)}
      await page.mouse.up();await wait(950);
     }
-    if(stage===5)assert.ok(treated<points.length,'Paste completes before every application spot is filled');
+    if(stage===5)assert.equal(treated,points.length,'Paste requires every application spot, not an aggregate percentage');
    }
    await wait(1300);assert.equal(await boundary(page),stage,`Treatment ${stage} completes and checkpoints`);console.log(`PASS: dental treatment ${stage}`);
    if(stage<8){await page.mouse.move(535,800);await page.mouse.down();await wait(50);const before=await page.locator('canvas').screenshot();await page.mouse.up();await page.reload();await enterLevel(page,2);await page.mouse.move(535,800);await page.mouse.down();await wait(50);const after=await page.locator('canvas').screenshot();await page.mouse.up();const a=PNG.sync.read(before),b=PNG.sync.read(after);for(let y=290;y<600;y++)for(let x=20;x<620;x++){const i=(y*640+x)*4;assert.equal(a.data.readUInt32LE(i),b.data.readUInt32LE(i),`Boundary ${stage} reconstructs mouth at ${x},${y}`)}}

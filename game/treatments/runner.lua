@@ -146,7 +146,7 @@ local function brush_sweep(self, ax, ay, dx, dy)
                 end
             end
             region.travel = travel
-            if travel >= sweep.distance*.8 then
+            if travel >= sweep.distance then
                 region.settle = 0
                 target_guidance.complete(self.hud.guides, index)
             else
@@ -183,7 +183,7 @@ local function paint(self, ax, ay, bx, by)
             end
             if touched then
                 msg.post(RENDER, "paint_region", { index = index, ax = ax, ay = ay, bx = bx, by = by, radius = radius })
-                if region.count >= 0.65 * #region.cells then
+                if region.count >= 0.8 * #region.cells then
                     region.settle = 0
                     target_guidance.complete(self.hud.guides, index)
                 end
