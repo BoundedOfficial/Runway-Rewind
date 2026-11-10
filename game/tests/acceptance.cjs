@@ -188,13 +188,14 @@ async function checkToolMotion(page) {
   await wait(1090);
   await pause(true);
   const exiting = await read('extractor-exiting');
-  assert.ok(!region(exiting, 420, 620, 200, 200).equals(region(rested, 420, 620, 200, 200)),
+  assert.ok(!region(exiting, 500, 620, 140, 200).equals(region(rested, 500, 620, 140, 200)),
     'The retiring extractor is visible on its way out');
   await pause(false);
   await page.mouse.up();
   await wait(900);
   const next = await read('spatula-after-extractor');
-  assert.ok(region(next, 420, 620, 200, 200).equals(region(rested, 420, 620, 200, 200)),
+  // The wider old region includes the newly visible cream neck guide.
+  assert.ok(region(next, 500, 620, 140, 200).equals(region(rested, 500, 620, 140, 200)),
     'The retiring extractor leaves the stage before the new tool rests');
 }
 
