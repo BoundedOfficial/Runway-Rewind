@@ -16,7 +16,7 @@ compatibility patch.
 
 ## Artifacts
 
-The two ZIPs and `package-manifest.json` are in `.scratch/releases/`. Both
+The two ZIPs and `package-manifest.json` are in `game/dist/releases/`. Both
 were built from the clean source revision
 `b35bc63c3d2c0fae33b182114346387e14e29017`. The release check verified the
 ZIP hashes and matched the files served from the extracted directories to
@@ -92,15 +92,15 @@ prototype plates, treatment layers, and tool sprites using the
 [layer tools](../tools/layers/README.md) describe regenerating the prototype
 layers from the versioned plates and authoring definitions.
 
-After extracting both ZIPs as `.scratch/releases/youtube` and
-`.scratch/releases/playgama`, run from the repository root.
+After extracting both ZIPs as `game/dist/releases/youtube` and
+`game/dist/releases/playgama`, run from the repository root.
 
 ```powershell
 npm ci --prefix game/tests
-$env:STAGE_EVIDENCE_DIR = "$PWD/.scratch/acceptance"
-node game/tests/acceptance.cjs .scratch/releases
+$env:STAGE_EVIDENCE_DIR = "$PWD/game/dist/test-results/acceptance"
+node game/tests/acceptance.cjs game/dist/releases
 $env:PACKAGE_EVIDENCE_FILE = "$env:STAGE_EVIDENCE_DIR/package-smoke.json"
-node game/tests/packages.cjs .scratch/releases/youtube .scratch/releases/playgama
+node game/tests/packages.cjs game/dist/releases/youtube game/dist/releases/playgama
 ```
 
 The acceptance runner also accepts `mouse`, `touch`, or `presentation`

@@ -2,6 +2,8 @@ node_modules/
 *.log
 
 /.scratch/
+/.cache/
+/game/dist/
 /game/build/
 /game/.internal/
 /game/.editor_settings/

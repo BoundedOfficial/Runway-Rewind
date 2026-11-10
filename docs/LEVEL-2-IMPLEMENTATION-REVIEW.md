@@ -1,0 +1,45 @@
+# Level 2 implementation review
+
+Follow-up user revisions preserve tool aspect ratios, dish fit, gesture-only treatment guidance, and removal of yellow food. The subsequent pacing correction removes aggregate auto-completion: every dental target requires sustained work, and unfinished debris stays visible until removed. Larger interaction areas remain; Level 1's original coverage and hair travel requirements are restored. The regression test `dental-remaining.cjs` covers a fast sweep, 13 of 14 cleared targets, a partially worked final target's visibility, and completion only after that target is finished. The original release verification below describes the pre-revision artifact.
+
+Layering revision: the dish moves below the mouth, worms use a generous body-shaped grab area with shorter hold/pull requirements, and unfinished scraps can fade to 30% opacity. Full registered plates now blend through one normalized compositor, sharing the surrounding face; independently feathered tooth tiles are removed. Deposits/fibers persist across the stages preceding their removal, and completed reveals/effects ease to their endpoints over 0.32 seconds. The original scraping handoff changed 59,643 mouth pixels. `dental-blending.cjs` now observes actual rendered frames at public checkpoint writes: all eight handoffs produced zero pixels exceeding its six-channel-sum rounding tolerance. The full dental checkpoint/replay run and remaining-debris regression passed. Phone-sized screenshots confirmed dish placement and partial blending, and touch collection exercises a worm body pickup outside the old grab circle.
+
+Specification: [issue #15](https://github.com/BoundedOfficial/Runway-Rewind/issues/15).
+Comparison point approved by the user: `627db4cc1fa2e8bbddf753208a6eb664b15d213b`.
+
+## Standards
+
+No remaining actionable findings. The review's two heuristic findings were resolved: dental treatment behavior now uses named metadata, and level cards/Next derive their destinations from the shared catalog.
+
+## Spec
+
+No remaining actionable findings. Rectangular brushing reveals were replaced with authored enamel silhouettes. Treatment text was moved clear of the tool. Fresh screenshots confirmed both corrections; the Level 1 portrait is suppressed behind menus and dental gameplay.
+
+Standards: 0 remaining findings; Spec: 0 remaining findings.
+
+## Verification
+
+The full browser suite was run, followed by focused reruns of failures. Test fixtures needed updates for Home/selection, held-guide brightness, one-value GPU color rounding across reloads, and the single distribution's simulated downstream host wrapper. Production behavior was not changed to satisfy those obsolete fixture assumptions.
+
+- Navigation: Home, two unlocked cards, independent saves, delayed-write isolation.
+- Dental: all eight treatments, mixed mouse/touch collection, invalid drop, exit cancellation, every checkpoint reload, floss retaining yellow enamel, brushing whitening, result and replay.
+- Level 1: skincare, extraction animation, makeup, hair, final reveal, Next and replay.
+- Lifecycle and persistence: pause, stale input cancellation, restart, failed/slow reads, failed writes, completed saves and delayed replay ordering.
+- Release: one auto-detect Playgama ZIP; both host adapters' readiness, resource requests, lifecycle and cloud failure/retry behavior. Full mouse and touch treatment runs and responsive presentation use the built release.
+
+Release tested from `e90d88ab516a0ee9231275f93cf6a9868e14cb82`, ZIP SHA-256 `258F1DD272046371C3BCD8E3A5F75AF943366AA85B736346E8C50AACE2600EAD`. The later documentation commit does not change the artifact.
+
+Environment: Windows, Chrome 156.0.8078.81, Defold 1.14.0. Touch and platform SDKs are simulated; physical-device and live-platform certification remain outside this local verification. These results were recorded during implementation. Temporary screenshots, builds, and raw reports were removed during project cleanup; the maintained tests reproduce the checks and write new evidence under `game/dist/test-results/`.
+
+Current tuning: worm pickup is narrowed to a 22-unit capsule radius along the full body. Toothpaste, brush, and polish contact radii increase from 48 to 64 before the existing padding. Toothpaste and polish now finish at 95% total progress, settling leftover coverage smoothly; drill/floss still require every scrap. Polish adds a brighter enamel-only finish. A rendered-frame regression reproduced release teleportation (15,899 tool pixels to zero in one frame); continuous return motion fixes it. Arrivals begin off-screen and departures preserve the displayed transform.
+
+Validation of current tuning: `dental-motion.cjs` and `dental-forgiving.cjs` pass. Toothpaste completes after six full spots plus partial final coverage; polish succeeds with contact 60 portrait units outside tooth centers. Sampled enamel blue-channel lift averages 67.5/255. Both changed handoffs (paste and polish) report zero changed mouth pixels above the established comparison tolerance.
+The full eight-treatment run, each checkpoint reload, replay, and exit cancellation also pass after this tuning; the release package builds successfully.
+
+Opening collection is now worms-only: all seven loose food sprites are removed, and the worm count increases from four to eight. Worms fill one centered row in the petri dish at their original scale. The focused built-game collection test collects all eight and reports zero changed mouth pixels at the scraping handoff; opening and nearly full-dish screenshots were inspected. Deposits between teeth remain for the later cleaning tools.
+
+Dish/tutorial tuning: the drop zone grows from 490 by 190 to 540 by 220 stage units. The collection regression now drops worms at y=900, beyond the former lower edge, and passes with a seamless checkpoint. Tutorial gestures appear on entry when the tool is available, then use a five-second idle cooldown after interaction in both levels. A browser pixel check confirmed the dental hint on entry, absent after three idle seconds, and visible after five.
+
+Worm pickup regression: delayed frame-based acquisition lost worms when a drag left the body before the 80 ms hold elapsed. Selection now captures on press and keeps the original body offset; movement and release apply the final pointer position directly. Held worms pause their wiggle. The same browser regression fails on an isolated build of the previous commit (no lifted worm) and passes on the fix (1,081 lifted pixels, zero visible held-pose changes, completed collection). It covers quick mouse/touch drags from head/middle/tail and invalid-drop recovery. Normal collection and its zero-jump handoff also pass.
+
+Project cleanup: removed the retired browser prototype, unused food sheet, reference APK, and scratch builds/evidence/experiments. Preserved the pinned compiler, Java runtime, and Bridge in `.cache/toolchain`, moved installed browser-test dependencies beside `game/tests/package.json`, and promoted the tutorial timing check to `game/tests/dental-tutorial.cjs`. Active commands now use `game/dist` for generated outputs. Verified setup, a clean artwork/game build, release packaging with staging cleanup, navigation, worm pickup, tutorial timing, and the preview HTTP response. Verification-only builds were removed afterward; the current preview remains available.

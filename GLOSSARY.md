@@ -4,6 +4,12 @@ Runway Rewind is a guided makeover game. Its first level takes one character thr
 
 ## Language
 
+**Home screen**:
+The game's entry screen, with a Play button that opens level selection.
+
+**Level selection**:
+The screen where the player chooses a level from its thumbnail.
+
 **Level**:
 A complete makeover experience for a character, comprising an ordered sequence of treatments and the finished result.
 
@@ -22,10 +28,13 @@ The visible space containing the character, treatment tools, and gameplay feedba
 _Avoid_: Web page when describing the playable experience.
 
 **Replay**:
-Starting Level 1's makeover again from the original dirty state.
+Starting the selected level again from its original dirty state.
+
+**Treatment checkpoint**:
+The saved boundary after a completed treatment. Resuming a level continues with its next incomplete treatment.
 
 **Next**:
-The action offered after a finished makeover to continue beyond the current level. Until another level is available, it leads to the end-of-content screen.
+The action offered after a finished makeover to enter the following level, when one is available.
 
 **End-of-content screen**:
-The screen explaining that more makeovers are coming when the player has finished the available content.
+The former screen explaining that more makeovers are coming. The planned multi-level flow replaces it with a return to level selection.

@@ -7,9 +7,17 @@ textures {
   name: "tools"
   texture: "/assets/generated/tools.atlas"
 }
+textures {
+  name: "dental"
+  texture: "/assets/generated/dental/dental.atlas"
+}
 materials {
   name: "target_guide"
   material: "/main/target_guide.material"
 }
+materials {
+  name: "dental_portrait"
+  material: "/main/dental_portrait.material"
+}
 material: "/builtins/materials/gui.material"
-max_nodes: 48
+max_nodes: 512

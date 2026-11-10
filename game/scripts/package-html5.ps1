@@ -1,6 +1,6 @@
 param(
-    [string]$Toolchain = (Join-Path $PSScriptRoot '../../.scratch/toolchain'),
-    [string]$ReleaseOutput = (Join-Path $PSScriptRoot '../../.scratch/releases'),
+    [string]$Toolchain = (Join-Path $PSScriptRoot '../../.cache/toolchain'),
+    [string]$ReleaseOutput = (Join-Path $PSScriptRoot '../dist/releases'),
     [switch]$CompatibilityTargets
 )
 
@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 $Toolchain = (Resolve-Path -LiteralPath $Toolchain).Path
 $ReleaseOutput = [IO.Path]::GetFullPath($ReleaseOutput)
 $repository = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$work = Join-Path $repository ".scratch/package-work/$([guid]::NewGuid())"
+$work = Join-Path $repository "game/dist/package-work/$([guid]::NewGuid())"
 $null = New-Item -ItemType Directory -Path $work, $ReleaseOutput -Force
 $bob = Join-Path $Toolchain 'bob-1.14.0.jar'
 $bridge = Join-Path $Toolchain 'playgama-bridge-2.4.1.js'
@@ -134,4 +134,9 @@ foreach ($package in $report.packages.Values) {
     Copy-Item -LiteralPath (Join-Path $work $package.file) -Destination $ReleaseOutput -Force
 }
 $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $ReleaseOutput 'package-manifest.json')
+# The distribution and manifest are the handoff; staging files are disposable.
+$workPath=[IO.Path]::GetFullPath($work)
+$workRoot=[IO.Path]::GetFullPath((Join-Path $repository 'game/dist/package-work'))+[IO.Path]::DirectorySeparatorChar
+if (!$workPath.StartsWith($workRoot,[StringComparison]::OrdinalIgnoreCase)) { throw "Unexpected package staging path: $workPath" }
+Remove-Item -LiteralPath $workPath -Recurse -Force
 Write-Output $ReleaseOutput

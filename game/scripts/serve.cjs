@@ -36,7 +36,7 @@ function preview(directory) {
 }
 
 if (require.main === module) {
-  const directory = process.argv[2] ?? path.join(__dirname, '../../.scratch/html5/Runway Rewind');
+  const directory = process.argv[2] ?? path.join(__dirname, '../dist/html5/Runway Rewind');
   const port = Number(process.argv[3] ?? 5174);
   preview(directory).listen(port, '127.0.0.1', () => {
     console.log(`Runway Rewind at http://127.0.0.1:${port}/`);

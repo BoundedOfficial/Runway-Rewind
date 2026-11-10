@@ -1,6 +1,10 @@
 # Defold game
 
-A fresh Level 1 run opens on the dirty portrait. **Start makeover** introduces the extractor. Pick it up and guide its tip to each of the fourteen pimples. Keep holding while the extractor presses and lifts, then move to the next pimple. The next tools arrive in order for cleansing cream, face and neck wiping, robe cleanup, eyebrow shaving, lip scrub, and hydration. Foundation, brow fill, eye makeup, blush and contour, crimson lipstick, and hair styling complete the makeover. After the finished portrait reveal, **Replay** returns to the dirty portrait and **Next** opens the end-of-content screen.
+Every launch opens **Home**. **Play** opens two unlocked level cards. Selecting an unfinished level resumes its next incomplete treatment; selecting a completed level starts a fresh replay. The in-level **Levels** button confirms that leaving restarts only the unfinished treatment. Results offer **Replay** and **Levels**, plus **Next** from Level 1 to Level 2.
+
+Level 1 retains its thirteen makeover treatments. Level 2 is native Defold gameplay using generated raster artwork: collect eight animated worms into a petri dish, scrape crust, clear deposits, floss, apply paste, brush, suction, polish. Floss only removes fibers; brushing cleans yellow enamel. There is no mouthwash treatment.
+
+Both levels keep independent treatment checkpoints. Level 1's existing version-1 storage key and record remain valid; Level 2 uses its own key with the same validated record contract. Per-level storage workers retain pending-operation ownership across selection and replay. Unknown reads never authorize destructive writes. Menus and both gameplay renderers share the existing Playgama pause/audio/restart lifecycle.
 
 ## Windows host setup
 
@@ -8,11 +12,12 @@ Use PowerShell 7, Node.js 24 and Chrome. Run from the repository root:
 
 ```powershell
 ./game/scripts/setup-toolchain.ps1
+npm ci --prefix game/tests
 ./game/scripts/build-html5.ps1
 node game/scripts/serve.cjs
 ```
 
-Open [the local preview](http://127.0.0.1:5174/). The bundle is in `.scratch/html5/Runway Rewind`. Use `-BundleOutput` to choose a different bundle parent directory and `-Variant release` for a release-mode preview. Pass the bundle directory as the first argument to `serve.cjs` when serving a non-default build. In a linked worktree, both PowerShell scripts accept `-Toolchain <path>` for reuse of the main checkout's `.scratch/toolchain`.
+Open [the local preview](http://127.0.0.1:5174/). The bundle is in `game/dist/html5/Runway Rewind`. Use `-BundleOutput` to choose a different bundle parent directory and `-Variant release` for a release-mode preview. Pass the bundle directory as the first argument to `serve.cjs` when serving a non-default build. In a linked worktree, both PowerShell scripts accept `-Toolchain <path>` for reuse of the main checkout's `.cache/toolchain`.
 
 The setup script verifies the SHA-256 of each upstream download before use.
 
@@ -23,13 +28,15 @@ The setup script verifies the SHA-256 of each upstream download before use.
 | [Playgama Bridge](https://github.com/Playgama/bridge/releases/tag/v2.4.1) | 2.4.1 | JavaScript SDK served with the game |
 | [Playwright Core](https://www.npmjs.com/package/playwright-core/v/1.58.2) and [PNGJS](https://www.npmjs.com/package/pngjs/v/7.0.0) | 1.58.2 and 7.0.0 | Host-only Chrome smoke check |
 
+The build also prepares Level 2 plates, trimmed tools/debris/effects and thumbnails from `game/artwork/level-2/assets/`. Level 2 uses a single native portrait compositor with normalized, overlapping tooth weights; Level 1 keeps its established portrait-mask renderer. No browser prototype is embedded.
+
 The build imports the starting portrait, authored layers, and tool sprites from `game/artwork/level-1/assets/` and stages the checked Bridge download as a bundle resource. Artwork recipes in `game/assets/recipes/` select authored region IDs or wildcard patterns and map tool names to cells of the 4-by-4 tool sheet or to standalone images. The build generates Defold atlases and imports the original hit cells in `game/assets/generated/`. Open `game/game.project` in the matching Defold editor after preparing the artwork with the build script.
 
 ## Build audit
 
 The project has no Defold libraries, native extensions, or custom app manifests. The build script checks for them and pins Bob's build-server endpoint to unused loopback. Bob compiles game resources locally and bundles its shipped `wasm-web` engine. Its Java HTTP client requires access to a local loopback socket, even for the stock engine build. Setup downloads upstream binaries and JavaScript once. Building and serving the bundle use the host.
 
-The HTML5 shell paints its loading state, initializes the pinned Bridge, then loads the Defold archive and engine. Once Defold has drawn the interactive stage, `platform.stage_ready()` sends Bridge `GAME_READY` once. The JavaScript adapter uses Bridge pause and audio events, including its standalone focus handling. It suspends the Defold frame loop while paused, leaving browser event handlers available to resume. The stage cancels the previous drag and discards the first resumed tick before taking new input. Development builds show Pause/Resume and Restart makeover. Confirming restart returns to the dirty portrait and Start prompt.
+The HTML5 shell paints its loading state, initializes the pinned Bridge, then loads the Defold archive and engine. Once Defold has drawn the interactive stage, `platform.stage_ready()` sends Bridge `GAME_READY` once. The JavaScript adapter uses Bridge pause and audio events, including its standalone focus handling. It suspends the Defold frame loop while paused, leaving browser event handlers available to resume. The stage cancels the previous drag and discards the first resumed tick before taking new input. Development builds show Pause/Resume and Restart makeover. Confirming restart begins the selected level again from its dirty state.
 
 The standalone preview uses the unmodified SDK. The target archives bundle a separate copy of Bridge 2.4.1 with the compatibility changes in [patch-bridge.cjs](scripts/patch-bridge.cjs). The script checks the upstream hash and each patch anchor. The archives include the patch source and [third-party notices](web/wasm-web/licenses/Playgama-Bridge-NOTICE.txt).
 
@@ -40,24 +47,19 @@ Delivery goes through Playgama, including distribution to YouTube. The default p
 Use `./game/scripts/package-html5.ps1` for this distribution archive. The optional `-CompatibilityTargets` switch produces the two forced-platform archives used by the historical compatibility checks below; those archives are not publishing handoffs.
 
 Run from the checkout you intend to package. Setup is shared with the preview.
-In a linked worktree, supply the main checkout's `.scratch/toolchain` to
-`-Toolchain` and its `.scratch/releases` to `-ReleaseOutput` to keep the
+In a linked worktree, supply the main checkout's `.cache/toolchain` to
+`-Toolchain` and its `game/dist/releases` to `-ReleaseOutput` to keep the
 archives after worktree cleanup.
 
 ```powershell
-./game/scripts/package-html5.ps1 -CompatibilityTargets
+./game/scripts/package-html5.ps1
 npm ci --prefix game/tests
-Expand-Archive .scratch/releases/runway-rewind-youtube.zip .scratch/releases/youtube -Force
-Expand-Archive .scratch/releases/runway-rewind-playgama.zip .scratch/releases/playgama -Force
-$env:PACKAGE_EVIDENCE_FILE = "$PWD/.scratch/releases/package-smoke.json"
-node game/tests/packages.cjs .scratch/releases/youtube .scratch/releases/playgama
+Expand-Archive game/dist/releases/runway-rewind-playgama.zip game/dist/releases/distribution -Force
+$env:PACKAGE_EVIDENCE_FILE = "$PWD/game/dist/releases/package-smoke.json"
+node game/tests/packages.cjs game/dist/releases/distribution
 ```
 
-The packager builds release mode once, then stages two ZIPs with `index.html`
-at the root. Both ship identical engine and game files. The target configs
-choose the appropriate Bridge adapter and disable analytics and remote
-configuration. Release mode excludes fixture settings, and the ZIPs omit
-the development controls script. `package-manifest.json` records the source
+The default packager builds a single auto-detect Playgama distribution ZIP with `index.html` at its root. Playgama handles downstream distribution, including YouTube. Compatibility-target packaging remains an explicit diagnostic option, not the default release workflow. Release mode excludes fixture settings and development controls. `package-manifest.json` records the source
 revision, worktree state, toolchain and Bridge hashes, per-file hashes, and ZIP
 hashes and sizes.
 
@@ -67,16 +69,15 @@ hashes and sizes.
 | Playgama | Bridge loads the platform's `platform-sdk/v1.js`. Game resources and Bridge come from the ZIP. | Game files at most 300 MB, Latin filenames, startup memory below 2 GB. |
 
 The YouTube loader paints a loading frame before Bridge calls
-`firstFrameReady`. Both builds send `gameReady` after the stage draws and
-the initial restore succeeds or reaches the playable failure path. The engine
+`firstFrameReady`. The game sends `gameReady` after Home draws; checkpoint restoration begins when a level is selected. The engine
 and archive loaders defer new requests during a pause. Release storage uses
 cloud reads and writes through Bridge. The compatibility patch propagates
 unavailable storage, rejected operations, and malformed cloud records, and
 prevents browser fallback and migration. It also defers retries when a pause
 interrupts a pending write.
 
-The smoke check serves the extracted ZIPs on the Windows host and intercepts
-each platform SDK at its documented URL. It exercises the actual bundled
+The smoke check serves the extracted distribution ZIP on the Windows host and intercepts
+each platform SDK at its documented URL, including the downstream wrapper supplying the YouTube SDK. It exercises the actual bundled
 Bridge with simulated host callbacks and storage responses. It checks the
 rendered stage, readiness, request origins, browser and resource errors,
 pause and resume, rejected and malformed reads, and write recovery after
@@ -137,8 +138,8 @@ sponge. This fixture is selected at build time and the build script rejects it
 in release builds.
 
 ```powershell
-./game/scripts/build-html5.ps1 -Fixture makeup -BundleOutput .scratch/makeup
-node game/tests/makeup.cjs ".scratch/makeup/Runway Rewind"
+./game/scripts/build-html5.ps1 -Fixture makeup -BundleOutput game/dist/makeup
+node game/tests/makeup.cjs "game/dist/makeup/Runway Rewind"
 ```
 
 The check exercises foundation, full brow arches, the combined eye look, blush
@@ -158,8 +159,8 @@ Set `STAGE_EVIDENCE_DIR` to capture the partial and finished portrait and
 end-of-content screen.
 
 ```powershell
-./game/scripts/build-html5.ps1 -Fixture finish -BundleOutput .scratch/finish
-node game/tests/finish.cjs ".scratch/finish/Runway Rewind"
+./game/scripts/build-html5.ps1 -Fixture finish -BundleOutput game/dist/finish
+node game/tests/finish.cjs "game/dist/finish/Runway Rewind"
 ```
 
 ### Runner and renderer
@@ -179,3 +180,27 @@ Hair styling counts brush travel over the loose hair on each side. Each side
 gradually fades into its styled artwork and settles after a few strokes.
 
 `portrait/portrait.render_script` uses a 640-by-960 committed target and cropped reveal targets. For local reveals, each eligible pointer segment draws an analytic soft brush into the corresponding target. Independent sampled hit cells govern completion, and the remaining region fades in smoothly. The renderer multiplies the already feathered atlas artwork by reveal coverage once and composites it with premultiplied blending. For temporary products such as cream, it retains the pre-product portrait and builds the wipe result on that surface. The wipe reveals the clean result under the brush, and the committed surface switches to it after all regions settle.
+
+## Multi-level verification
+
+`navigation.cjs` exercises Home/selection, per-level storage and delayed-save isolation through the built browser game and existing platform fixtures. `dental.cjs` plays all eight treatments, mixes touch/mouse collection, cancels exit after a collected item, verifies floss/brush color behavior, reloads every treatment boundary, and checks replay. Existing Level 1 fixtures now enter through Home and selection. The release acceptance check verifies one distribution artifact against both existing host simulations.
+
+Run `./game/scripts/test-all.ps1` for the complete debug, fixture, and single-package browser suite. Evidence and results are written under `game/dist/test-results/`.
+
+### Gesture and interaction revision
+
+Idle hand gestures demonstrate pickup/hold, sweeping, and collection drops. They appear on level entry as soon as the tool is available, disappear on input, and return after five seconds of inactivity; treatment instructions and title panels are removed. Navigation and exit confirmation retain their button labels.
+
+Dental sprite dimensions are exported alongside the atlas, so tools and food use their authored aspect ratios instead of querying GUI auto-size during creation. The petri dish retains its source proportions; collected items keep their mouth scale and use centered positions inside the dish. The yellow food variant is excluded.
+
+Debris-removal treatments require every individual target to finish. Toothpaste and polish finish at 95% total progress, then smoothly settle any remaining visual coverage. Hold actions require about 0.85 seconds per target, and stroke actions require movement plus at least 0.75 seconds of contact. Unfinished drill/floss debris fades down to 30% opacity, then eases out over 0.32 seconds when its target is completed. Paste, foam, and tooth reveals settle continuously too. Idle gestures point to unfinished targets. Toothpaste, brushing, and polish use a 64-unit base radius (plus the existing 15% padding); other treatment radii are unchanged. Worms use a 22-unit radius along their full 62-unit body, immediate capture on press, and a 40-unit freeing pull. The captured body point stays attached throughout a drag, and the worm pauses its wiggle while held. The dish is centered at stage y=795, below the mouth, with a forgiving 540-by-220 drop area. Level 1 retains its original 80% per-region paint coverage and full hair-styling travel, with the more forgiving 1.35 interaction multiplier. Extraction and collection still require every visible item.
+
+The dental portrait shader composites full registered plates in one draw and shares the dirty plate's surrounding face across all states. The mouth feather is applied once to the final color, so adjacent reveals cannot leave seams or a dirty layer underneath. Deposits and fibers exist from collection onward and disappear only in their respective treatments. Polished enamel receives an additional neutral highlight lift, preserving the red gums and dark gaps. The finished composite and next stage use the same pixels. `dental-blending.cjs` compares actual consecutive mouth frames at checkpoint writes; it includes every handoff through the final polish.
+
+Tool arrivals start off-screen; releases smoothly return to rest, and exits start from the displayed position and rotation. `dental-motion.cjs` checks rendered tool continuity on release. `dental-forgiving.cjs` checks outer-edge contact, partial final toothpaste coverage, and the polish color change.
+
+`dental-pickup.cjs` checks fast mouse/touch drags from the head, middle, and tail, a stable held pose, invalid-drop recovery, and collection completion.
+
+## Local files and cleanup
+
+Reusable build scripts live in `game/scripts`, browser checks and their pinned npm dependencies in `game/tests`, and artwork-authoring tools in `tools/layers`. The checked compiler, Java runtime, and Bridge download are installed in ignored `.cache/toolchain`; `setup-toolchain.ps1` recreates them. All generated previews, packages, and test evidence belong in ignored `game/dist`. These outputs can be deleted and rebuilt. No running game or build/test command depends on `.scratch` or the retired browser prototype.

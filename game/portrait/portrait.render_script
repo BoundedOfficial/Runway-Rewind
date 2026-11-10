@@ -3,7 +3,7 @@ local artwork = require "portrait.artwork"
 local COLOR = graphics.BUFFER_TYPE_COLOR0_BIT
 local WIDTH, HEIGHT = artwork.width, artwork.height
 local CLEAR = { [COLOR] = vmath.vector4(0, 0, 0, 0) }
-local CLEAR_SCREEN = { [COLOR] = vmath.vector4(0.63, 0.68, 0.52, 1) }
+local CLEAR_SCREEN = { [COLOR] = vmath.vector4(0.84, 0.81, 0.94, 1) }
 local IDENTITY = vmath.matrix4()
 local FULL_X = vmath.vector4(0, 0, 1, 0)
 local FULL_Y = vmath.vector4(0, 1, 0, 0)
@@ -264,7 +264,7 @@ function update(self)
         vmath.matrix4_orthographic(camera.x - half_width, camera.x + half_width,
             center_y - half_height, center_y + half_height, -1, 1))
     render.clear(CLEAR_SCREEN)
-    if self.atlas_texture then
+    if self.atlas_texture and self.visible ~= false then
         draw_layer(self, self.committed, self.surface)
         local effect = self.extraction
         -- Squeeze the underlying skin before the reveal and draw the released
@@ -282,7 +282,9 @@ function update(self)
 end
 
 function on_message(self, id, message)
-    if id == hash("load_portrait_artwork") then
+    if id == hash("portrait_visibility") then
+        self.visible = message.visible
+    elseif id == hash("load_portrait_artwork") then
         load_atlas(self, message.atlas)
         local atlas = resource.get_atlas(message.splat)
         local texture = resource.get_texture_info(atlas.texture)

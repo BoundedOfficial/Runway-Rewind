@@ -2,7 +2,7 @@
 title = Runway Rewind
 version = 0.1.0
 bundle_resources = /web
-custom_resources = assets/generated/regions.json
+custom_resources = assets/generated/regions.json,assets/generated/dental/dimensions.json
 
 [bootstrap]
 main_collection = /main/main.collectionc

@@ -1,0 +1,29 @@
+name: "dental_portrait"
+tags: "gui"
+vertex_program: "/builtins/materials/gui.vp"
+fragment_program: "/main/dental_portrait.fp"
+vertex_space: VERTEX_SPACE_WORLD
+vertex_constants { name: "view_proj" type: CONSTANT_TYPE_VIEWPROJ }
+fragment_constants { name: "from_x" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "from_y" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "to_x" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "to_y" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "background_x" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "background_y" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target0" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target1" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target2" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target3" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target4" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target5" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target6" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target7" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target8" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target9" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target10" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target11" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target12" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target13" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target14" type: CONSTANT_TYPE_USER }
+fragment_constants { name: "target15" type: CONSTANT_TYPE_USER }
+samplers { name: "texture_sampler" wrap_u: WRAP_MODE_CLAMP_TO_EDGE wrap_v: WRAP_MODE_CLAMP_TO_EDGE filter_min: FILTER_MODE_MIN_LINEAR filter_mag: FILTER_MODE_MAG_LINEAR }

@@ -1,3 +1,4 @@
+const { enterLevel, tapStage } = require('./entry.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -56,7 +57,7 @@ async function checkExtraction(browser, url, input) {
       if (message.type() === 'error' || /ERROR:/.test(message.text())) errors.push(message.text());
     });
     await page.goto(url);
-    await page.locator('#game-loading').waitFor({ state: 'detached' });
+    await enterLevel(page);
     const pointer = await createStagePointer(page, input, (x, y) => ({ x, y }), { moveDelay: 32, downDelay: 42 });
     const pickUp = () => pointer.down(320, 828);
     const aim = ([x, y], dx = 0, dy = 0) => pointer.move(x - 28 + dx, y + 24 + dy);
@@ -146,7 +147,7 @@ async function checkExtraction(browser, url, input) {
 }
 
 async function main() {
-  const bundle = process.argv[2] ?? path.join(__dirname, '../../.scratch/html5/Runway Rewind');
+  const bundle = process.argv[2] ?? path.join(__dirname, '../dist/html5/Runway Rewind');
   const server = preview(bundle);
   await new Promise((resolve, reject) => {
     server.once('error', reject);

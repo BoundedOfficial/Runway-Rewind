@@ -1,3 +1,4 @@
+const { enterLevel, tapStage } = require('./entry.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -83,18 +84,8 @@ async function checkMakeup(browser, url, input, release) {
       }
       return PNG.sync.read(bytes);
     }
-    if (!release) {
-      await page.waitForFunction(() => window.bridge?.isInitialized);
-      const deadline = Date.now() + 10000;
-      let startup;
-      do {
-        startup = await snapshot();
-      } while (startup.data[(878 * startup.width + 320) * 4] < 244 && Date.now() < deadline);
-      assert.ok(startup.data[(878 * startup.width + 320) * 4] >= 244, 'Start makeover appears');
-      await down(320, 888);
-      await up();
-      await wait(600);
-    }
+    if (!release) await enterLevel(page);
+    await down(10,900); await up(); await wait(40); // Dismiss the idle gesture before comparing artwork.
 
     const before = await snapshot('completed-skincare');
     await down(320, 828);
