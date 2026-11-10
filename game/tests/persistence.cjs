@@ -319,7 +319,11 @@ async function checkReplayOrdering(page, url) {
   await waitFor(reset, 'Replay did not save the reset after the completion write');
   await page.reload();
   await ready(page);
-  assert.ok((await frame(page, portrait)).equals(dirty), 'Replay wins over the delayed completion save after reload');
+  if(evidence){fs.mkdirSync(evidence,{recursive:true});fs.writeFileSync(path.join(evidence,'replay-before.png'),PNG.sync.write({width:portrait.width,height:portrait.height,data:dirty}));fs.writeFileSync(path.join(evidence,'replay-after.png'),PNG.sync.write({width:portrait.width,height:portrait.height,data:await frame(page,portrait)}));}
+  const restored = await frame(page, portrait);
+  // GPU readback can round individual color channels by one across reloads.
+  assert.ok(restored.every((value, index) => Math.abs(value - dirty[index]) <= 1),
+    'Replay wins over the delayed completion save after reload');
   await frame(page, null, 'replay-reset-after-delayed-completion');
   const dirtyBlemish = await frame(page, blemish);
   await start(page);
@@ -357,7 +361,7 @@ async function main() {
   }
 }
 
-module.exports = { mockBridgeStorage, deferred, waitFor, savedRun };
+module.exports = { mockBridgeStorage, deferred, waitFor, savedRun, checkReplayOrdering };
 if (require.main === module) main().catch(error => {
   console.error(error);
   process.exitCode = 1;

@@ -35,7 +35,7 @@ The build imports the starting portrait, authored layers, and tool sprites from 
 
 The project has no Defold libraries, native extensions, or custom app manifests. The build script checks for them and pins Bob's build-server endpoint to unused loopback. Bob compiles game resources locally and bundles its shipped `wasm-web` engine. Its Java HTTP client requires access to a local loopback socket, even for the stock engine build. Setup downloads upstream binaries and JavaScript once. Building and serving the bundle use the host.
 
-The HTML5 shell paints its loading state, initializes the pinned Bridge, then loads the Defold archive and engine. Once Defold has drawn the interactive stage, `platform.stage_ready()` sends Bridge `GAME_READY` once. The JavaScript adapter uses Bridge pause and audio events, including its standalone focus handling. It suspends the Defold frame loop while paused, leaving browser event handlers available to resume. The stage cancels the previous drag and discards the first resumed tick before taking new input. Development builds show Pause/Resume and Restart makeover. Confirming restart returns to the dirty portrait and Start prompt.
+The HTML5 shell paints its loading state, initializes the pinned Bridge, then loads the Defold archive and engine. Once Defold has drawn the interactive stage, `platform.stage_ready()` sends Bridge `GAME_READY` once. The JavaScript adapter uses Bridge pause and audio events, including its standalone focus handling. It suspends the Defold frame loop while paused, leaving browser event handlers available to resume. The stage cancels the previous drag and discards the first resumed tick before taking new input. Development builds show Pause/Resume and Restart makeover. Confirming restart begins the selected level again from its dirty state.
 
 The standalone preview uses the unmodified SDK. The target archives bundle a separate copy of Bridge 2.4.1 with the compatibility changes in [patch-bridge.cjs](scripts/patch-bridge.cjs). The script checks the upstream hash and each patch anchor. The archives include the patch source and [third-party notices](web/wasm-web/licenses/Playgama-Bridge-NOTICE.txt).
 
@@ -51,10 +51,9 @@ In a linked worktree, supply the main checkout's `.scratch/toolchain` to
 archives after worktree cleanup.
 
 ```powershell
-./game/scripts/package-html5.ps1 -CompatibilityTargets
+./game/scripts/package-html5.ps1
 npm ci --prefix game/tests
-Expand-Archive .scratch/releases/runway-rewind-youtube.zip .scratch/releases/youtube -Force
-Expand-Archive .scratch/releases/runway-rewind-playgama.zip .scratch/releases/playgama -Force
+Expand-Archive .scratch/releases/runway-rewind-playgama.zip .scratch/releases/distribution -Force
 $env:PACKAGE_EVIDENCE_FILE = "$PWD/.scratch/releases/package-smoke.json"
 node game/tests/packages.cjs .scratch/releases/distribution
 ```
@@ -69,16 +68,15 @@ hashes and sizes.
 | Playgama | Bridge loads the platform's `platform-sdk/v1.js`. Game resources and Bridge come from the ZIP. | Game files at most 300 MB, Latin filenames, startup memory below 2 GB. |
 
 The YouTube loader paints a loading frame before Bridge calls
-`firstFrameReady`. Both builds send `gameReady` after the stage draws and
-the initial restore succeeds or reaches the playable failure path. The engine
+`firstFrameReady`. The game sends `gameReady` after Home draws; checkpoint restoration begins when a level is selected. The engine
 and archive loaders defer new requests during a pause. Release storage uses
 cloud reads and writes through Bridge. The compatibility patch propagates
 unavailable storage, rejected operations, and malformed cloud records, and
 prevents browser fallback and migration. It also defers retries when a pause
 interrupts a pending write.
 
-The smoke check serves the extracted ZIPs on the Windows host and intercepts
-each platform SDK at its documented URL. It exercises the actual bundled
+The smoke check serves the extracted distribution ZIP on the Windows host and intercepts
+each platform SDK at its documented URL, including the downstream wrapper supplying the YouTube SDK. It exercises the actual bundled
 Bridge with simulated host callbacks and storage responses. It checks the
 rendered stage, readiness, request origins, browser and resource errors,
 pause and resume, rejected and malformed reads, and write recovery after
@@ -185,3 +183,5 @@ gradually fades into its styled artwork and settles after a few strokes.
 ## Multi-level verification
 
 `navigation.cjs` exercises Home/selection, per-level storage and delayed-save isolation through the built browser game and existing platform fixtures. `dental.cjs` plays all eight treatments, mixes touch/mouse collection, cancels exit after a collected item, verifies floss/brush color behavior, reloads every treatment boundary, and checks replay. Existing Level 1 fixtures now enter through Home and selection. The release acceptance check verifies one distribution artifact against both existing host simulations.
+
+Run `./game/scripts/test-all.ps1` for the complete debug, fixture, and single-package browser suite. Evidence and results are written under `.scratch/level2/full-suite/`.

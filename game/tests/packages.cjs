@@ -138,7 +138,7 @@ async function open(browser, url, target, host, check, pageOptions = {}) {
     // Simulate that wrapper around the same auto-detect distribution, without
     // producing or modifying a separate YouTube release artifact.
     if (target === 'youtube' && address === url) {
-      const response = await route.fetch();
+      const response = await route.fetch({url: address.replace('runway.test', '127.0.0.1')});
       const body = (await response.text()).replace('<script src="playgama-bridge.js">',
         '<script src="https://www.youtube.com/game_api/v1"></script><script src="playgama-bridge.js">');
       return route.fulfill({response, body});
