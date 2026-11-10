@@ -72,6 +72,7 @@ async function checkFinish(browser, url, input, release) {
     let dirty = release?.dirty;
     if (!release) { await enterLevel(page); dirty = await snapshot('hair-start'); }
 
+    await down(10,900); await up(); await wait(40); // Compare artwork without the idle gesture.
     const before = await snapshot('hair-ready');
     assert.ok(count(before, [260, 491, 380, 539], (r, g, b) => r - g > 55 && r - b > 28) > 900,
       'The styling treatment begins with crimson lipstick already applied');
@@ -94,8 +95,8 @@ async function checkFinish(browser, url, input, release) {
     await stroke([[320, 620], [72, 610], [85, 520]]);
     await wait(620);
     const leftSettled = await snapshot('left-hair-settled');
-    assert.ok(changed(leftPartial, leftSettled, lowerLeftHair) > 3000,
-      'Brushing the same still-messy hair again settles the side');
+    assert.ok(changed(before, leftSettled, lowerLeftHair) > 3000,
+      'The easier styling requirement settles the side fully');
     assert.equal(changed(before, leftSettled, rightHair), 0, 'The right side still needs its own treatment');
 
     await stroke([[320, 640], [320, 265], [367, 159], [395, 126], [440, 111]]);
@@ -107,16 +108,16 @@ async function checkFinish(browser, url, input, release) {
     assert.ok(changed(crown, outer, lowerRightHair) > 300, 'Brushing the outer hair continues styling that side');
 
     const actions = [125, 874, 235, 901];
-    const treatmentLabel = [225, 28, 415, 49];
+    const treatmentLabel = [195, 21, 445, 43]; // Compact progress strip; explanatory titles were removed.
     const rest = [298, 790, 342, 841];
     await stroke([[553, 730], [597, 645], [587, 550]]);
     const revealDeadline = Date.now() + 3000;
     let reveal;
     do {
       reveal = await snapshot('finished-portrait-hold');
-    } while (count(reveal, treatmentLabel, pale) >= 30 && Date.now() < revealDeadline);
+    } while (changed(before, reveal, treatmentLabel) < 500 && Date.now() < revealDeadline);
     assert.ok(changed(before, reveal, rest) >= 500, 'The styling brush leaves when both targets settle');
-    assert.ok(count(reveal, treatmentLabel, pale) < 30, 'The treatment label clears before the finished portrait hold');
+    assert.ok(changed(before, reveal, treatmentLabel) > 500, 'The progress strip clears before the finished portrait hold');
     assert.ok(count(reveal, actions, pale) < 100, 'The finished portrait is held before actions appear');
     assert.ok(changed(before, reveal, rightHair) > 5000, 'Finishing the right target settles its artwork');
     assert.equal(changed(leftSettled, reveal, lowerLeftHair, 0), 0,

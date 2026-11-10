@@ -303,8 +303,8 @@ async function checkStage(browser, url, input, release) {
     await wait(420);
     const cheekFrame = await canvas.screenshot();
     const cheekSettled = PNG.sync.read(cheekFrame);
-    assert.ok(changedPixels(returned, cheekSettled, leftCheek) > 1800, 'The left cheek settles after sufficient coverage');
-    assert.equal(changedPixels(beforeDrag, cheekSettled, rightCheek), 0, 'The opposite cheek still needs treatment');
+    assert.ok(changedPixels(beforeDrag, cheekSettled, leftCheek) > 1800, 'The left cheek settles after sufficient coverage, including the earlier partial stroke');
+    assert.ok(changedPixels(beforeDrag, cheekSettled, rightCheek) < 50, 'The wider brush may feather at the edge, but the opposite cheek still needs treatment');
     assert.equal(changedPixels(beforeDrag, cheekSettled, forehead), 0, 'The forehead still needs treatment');
     assert.equal(changedPixels(beforeDrag, cheekSettled, toolRest), 0, 'The treatment still uses the cream spatula');
     saveEvidence(input, 'cream-one-cheek-settled', cheekFrame);

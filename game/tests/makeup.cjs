@@ -85,6 +85,7 @@ async function checkMakeup(browser, url, input, release) {
       return PNG.sync.read(bytes);
     }
     if (!release) await enterLevel(page);
+    await down(10,900); await up(); await wait(40); // Dismiss the idle gesture before comparing artwork.
 
     const before = await snapshot('completed-skincare');
     await down(320, 828);

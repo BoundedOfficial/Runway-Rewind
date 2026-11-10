@@ -1,11 +1,12 @@
 local artwork = require "portrait.artwork"
 local target_guidance = require "main.target_guidance"
+local gesture = require 'main.gesture'
 
 local M = {}
 local RENDER = "@render:"
 local REST = vmath.vector4(320, 828, 0, 1)
 local TOOL_SIZE = 118
-local INTERACTION_SCALE = 1.2
+local INTERACTION_SCALE = 1.35
 local TIP_X, TIP_Y = 28, -24
 local TIMING = { entering = 0.46, returning = 0.27, completing = 0.18, exiting = 0.28 }
 local CENTER_X, CENTER_Y = artwork.width / 2, artwork.height / 2
@@ -51,6 +52,7 @@ end
 
 local function clear_guidance(self)
     target_guidance.clear(self.hud.guides)
+    if self.hud.gesture then gui.set_enabled(self.hud.gesture,false) end
     gui.set_enabled(self.hud.instruction, false)
 end
 
@@ -81,6 +83,8 @@ local function begin(self, index)
         removes_transient = treatment.removes_transient,
     })
     gui.set_text(self.hud.label, treatment.label)
+    gui.set_enabled(self.hud.label,false)
+    self.idle=0
     for i, step in ipairs(self.hud.steps) do
         gui.set_color(step, i < index and STEP_PAST or i == index and STEP_CURRENT or STEP_PENDING)
     end
@@ -142,7 +146,7 @@ local function brush_sweep(self, ax, ay, dx, dy)
                 end
             end
             region.travel = travel
-            if travel >= sweep.distance then
+            if travel >= sweep.distance*.8 then
                 region.settle = 0
                 target_guidance.complete(self.hud.guides, index)
             else
@@ -179,7 +183,7 @@ local function paint(self, ax, ay, bx, by)
             end
             if touched then
                 msg.post(RENDER, "paint_region", { index = index, ax = ax, ay = ay, bx = bx, by = by, radius = radius })
-                if region.count >= 0.8 * #region.cells then
+                if region.count >= 0.65 * #region.cells then
                     region.settle = 0
                     target_guidance.complete(self.hud.guides, index)
                 end
@@ -280,6 +284,7 @@ function M.input(self, x, y, pressed, released, pointer_button)
         M.cancel(self, true)
     elseif pointer_button and pressed and not self.pointer_down then
         self.pointer_down = true
+        self.idle=0; gui.set_enabled(self.hud.gesture,false)
         local pickup_radius = TOOL_SIZE * tool_scale(self) * INTERACTION_SCALE / 2
         if self.state == "ready" and math.abs(x - self.rest.x) <= pickup_radius and
                 math.abs(y - self.rest.y) <= pickup_radius then
@@ -358,7 +363,24 @@ function M.update(self, dt)
         return self.treatment.id
     end
 
-    if state == "ready" then return end
+    if state == "ready" then
+        self.idle=self.pointer_down and 0 or (self.idle or 0)+dt
+        if self.idle>1.2 then
+            for i,region in ipairs(self.regions) do
+                if not region.settle then
+                    local r=artwork.regions[self.treatment.regions[i]]
+                    local x=r.anchor and r.anchor[1] or r.x+r.width/2
+                    local y=r.anchor and r.anchor[2] or r.y+r.height/2
+                    x=CENTER_X+(x-self.camera.x)*self.camera.z; y=CENTER_Y+(y-self.camera.y)*self.camera.z
+                    gesture.show(self.hud.gesture,self.idle-1.2,self.rest.x,self.rest.y,
+                        self.treatment.extraction_time and 'pickup_hold' or 'pickup',x-TIP_X,y-TIP_Y)
+                    break
+                end
+            end
+        end
+        return
+    end
+    self.idle=0; gui.set_enabled(self.hud.gesture,false)
     self.elapsed = self.elapsed + dt
     if state == "held" then
         if self.extraction then
@@ -389,7 +411,7 @@ function M.update(self, dt)
         self.state = "ready"
         if state == "entering" then
             target_guidance.show(self.hud.guides, self.treatment, self.camera)
-            gui.set_enabled(self.hud.instruction, self.demonstrate)
+            gui.set_enabled(self.hud.instruction, false)
         end
     end
 end

@@ -7,5 +7,7 @@ async function enterLevel(page,level=1) {
   await page.locator('#game-loading').waitFor({state:'detached',timeout:30000});
   await wait(100); await tapStage(page,320,480); await wait(100);
   await tapStage(page,level===1?200:440,480); await wait(1850);
+  // Dismiss the animated idle hint via ordinary input before artwork comparisons.
+  await tapStage(page,10,900); await wait(50);
 }
 module.exports={enterLevel,tapStage};

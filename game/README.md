@@ -185,3 +185,11 @@ gradually fades into its styled artwork and settles after a few strokes.
 `navigation.cjs` exercises Home/selection, per-level storage and delayed-save isolation through the built browser game and existing platform fixtures. `dental.cjs` plays all eight treatments, mixes touch/mouse collection, cancels exit after a collected item, verifies floss/brush color behavior, reloads every treatment boundary, and checks replay. Existing Level 1 fixtures now enter through Home and selection. The release acceptance check verifies one distribution artifact against both existing host simulations.
 
 Run `./game/scripts/test-all.ps1` for the complete debug, fixture, and single-package browser suite. Evidence and results are written under `.scratch/level2/full-suite/`.
+
+### Gesture and interaction revision
+
+Idle hand gestures demonstrate pickup/hold, sweeping, and collection drops. They disappear on input and resume after inactivity; treatment instructions and title panels are removed. Navigation and exit confirmation retain their button labels.
+
+Dental sprite dimensions are exported alongside the atlas, so tools and food use their authored aspect ratios instead of querying GUI auto-size during creation. The petri dish retains its source proportions; collected items keep their mouth scale and use centered positions inside the dish. The yellow food variant is excluded.
+
+Dental continuous treatments complete at 75% aggregate coverage, then settle the remaining artwork fully. Interaction radii are 15% wider (collection pickup is 37 instead of 31 portrait units). Level 1 uses a 1.35 interaction multiplier instead of 1.2, 65% painted-region coverage instead of 80%, and 20% less hair-styling travel. Extraction still requires each pimple to be popped; collection still requires each visible item to be placed in the dish.

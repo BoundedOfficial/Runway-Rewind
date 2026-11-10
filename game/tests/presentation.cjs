@@ -58,19 +58,19 @@ const filled = ([r, g, b]) => r > 240 && g > 180 && g < 223 && b < 163;
 
 async function checkProgress({ down, move, up, snapshot }) {
   const start = await snapshot();
-  assert.ok(filled(start.pixel(212, 56)), 'Level entry starts the treatment HUD');
+  assert.ok(filled(start.pixel(212, 32)), 'Level entry starts the treatment HUD');
   await down(320, 888);
   await up();
   await wait(700);
   const first = await snapshot();
-  assert.ok(filled(first.pixel(212, 56)), 'The compact strip marks the current treatment');
-  assert.ok(!filled(first.pixel(230, 56)), 'The next treatment is still pending');
+  assert.ok(filled(first.pixel(212, 32)), 'The compact strip marks the current treatment');
+  assert.ok(!filled(first.pixel(230, 32)), 'The next treatment is still pending');
   await down(320, 828);
   await holdPimples(move);
   await up();
   await wait(1300);
   const next = await snapshot('second-treatment-progress');
-  assert.ok(filled(next.pixel(230, 56)), 'Completing extraction advances the overall progress strip');
+  assert.ok(filled(next.pixel(230, 32)), 'Completing extraction advances the overall progress strip');
 }
 
 function visibleArc(before, after, x, y, radius) {
@@ -131,7 +131,7 @@ async function checkViewport({ down, move, up, snapshot, stage, viewport }) {
   await up();
   await wait(670);
   const ready = await snapshot(name + '-tool-ready');
-  assert.ok(filled(ready.pixel(212, 56)), 'The current treatment stays visible above the face');
+  assert.ok(filled(ready.pixel(212, 32)), 'The current treatment stays visible above the face');
   await down(320, 828);
   await holdPimples(move, pimples.slice(0, 1));
   const held = await snapshot(name + '-held');

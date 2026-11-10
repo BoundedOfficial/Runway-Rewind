@@ -1,5 +1,7 @@
 # Level 2 implementation review
 
+Follow-up user revision: tool aspect ratios, dish fit, gesture-only treatment guidance, removal of yellow food, and easier completion supersede the original text-guidance and full-coverage presentation. These changes were checked with the built dental playthrough/checkpoint tests, navigation, and Level 1 mouse/touch skincare, makeup, and hair tests. A focused check also completed toothpaste with one of seven spots untouched. The original release verification below describes the pre-revision artifact.
+
 Specification: [issue #15](https://github.com/BoundedOfficial/Runway-Rewind/issues/15).
 Comparison point approved by the user: `627db4cc1fa2e8bbddf753208a6eb664b15d213b`.
 

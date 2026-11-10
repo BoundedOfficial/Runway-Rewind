@@ -4,6 +4,7 @@ local runner = require 'treatments.runner'
 local dental = require 'treatments.dental'
 local levels = require 'main.levels'
 local guidance = require 'main.target_guidance'
+local gesture = require 'main.gesture'
 local POINTER = hash('pointer')
 local INK = vmath.vector4(.25,.20,.36,1)
 local IVORY = vmath.vector4(1,.96,.91,1)
@@ -29,18 +30,19 @@ local function button(x,y,w,caption,parent)
     local node=rounded(box(x,y,w,58,parent)); text(0,0,caption,node,.9); return node
 end
 local function hud()
-    local background=box(320,916,254,58)
+    local background=box(320,928,254,22)
     gui.set_color(background,vmath.vector4(.19,.12,.12,.94))
     local label=text(0,6,'',background); gui.set_color(label,IVORY)
     local steps={}
-    for i=1,#levels[1].sequence do steps[i]=box((i-7)*18,-12,13,4,background) end
-    local instruction=text(320,200,'Drag to a pimple and hold'); gui.set_color(instruction,IVORY)
+    for i=1,#levels[1].sequence do steps[i]=box((i-7)*18,0,13,4,background) end
+    local instruction=text(320,200,''); gui.set_color(instruction,IVORY)
     gui.set_enabled(background,false); gui.set_enabled(instruction,false)
-    return {background=background,label=label,steps=steps,instruction=instruction,guides=guidance.create(levels[1].sequence)}
+    return {background=background,label=label,steps=steps,instruction=instruction,guides=guidance.create(levels[1].sequence),gesture=gesture.create()}
 end
 local function hide_hud(self)
     gui.set_enabled(self.hud.background,false); gui.set_enabled(self.hud.instruction,false)
     guidance.clear(self.hud.guides); gui.set_enabled(self.tool,false)
+    gui.set_enabled(self.hud.gesture,false)
 end
 local function show(self,screen)
     self.screen=screen; self.pressed=nil
