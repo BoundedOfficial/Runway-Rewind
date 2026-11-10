@@ -1,8 +1,9 @@
 -- Native GUI artwork composition and interaction for the dental treatment sequence.
 local M = {}
 local gesture = require 'main.gesture'
+local portrait_composite = require 'treatments.dental_portrait'
 local DIMENSIONS = json.decode(sys.load_resource('/assets/generated/dental/dimensions.json'))
-local REGIONS = json.decode(sys.load_resource("/assets/generated/dental/regions.json"))
+local DISH = {x=245,y=795}
 local CAMERA = { x = -70.4, y = -97.9, scale = 1.22 }
 local TEETH = {{80,381},{128,380},{193,388},{275,390},{378,390},{459,384},{521,377},{563,380},{93,482},{156,507},{225,521},{293,526},{359,526},{424,520},{484,506},{539,480}}
 local GAPS = {{101,396},{158,405},{223,422},{326,430},{426,417},{491,400},{548,395},{126,504},{193,532},{259,544},{326,548},{392,540},{457,528},{516,505}}
@@ -49,23 +50,22 @@ end
 local function begin(self,index)
     if self.root then gui.delete_node(self.root) end
     self.root=gui.new_box_node(vmath.vector3(),vmath.vector3())
-    self.index=index; self.work={}; self.contact={}; self.travel={}; self.items={}; self.tiles={}; self.effects={}; self.pastes={}; self.bubbles={}
+    self.index=index; self.work={}; self.settle={}; self.contact={}; self.travel={}; self.items={}; self.effects={}; self.pastes={}; self.bubbles={}
     self.pointer=nil; self.grip=nil; self.arrival=0; self.transition=nil; self.idle=0
     self.food_count=0; self.worm_count=0
     self.treatment=M.sequence[index]
     local treatment=self.treatment or {plate="polished"}
     local plate=treatment.plate
-    at(self,"dental-"..plate,320,480,640,960)
-    if treatment.reveal then
-        local result=treatment.reveal
-        for i=1,16 do
-            local r=REGIONS[i]
-            local node=at(self,result.."-"..i,r.x+r.width/2,r.y+r.height/2,r.width,r.height)
-            alpha(node,0); self.tiles[i]=node
+    self.portrait=at(self,"dental-"..plate,320,480,640,960)
+    portrait_composite.configure(self.portrait,plate,treatment.reveal,TEETH)
+    -- Residue is present from the start, not suddenly introduced at a handoff.
+    for _,layer in ipairs({{until_stage=4,id='treatment-fx-3',width=28},{until_stage=3,id='treatment-fx-2',width=22}}) do
+        if index<=layer.until_stage then
+            for i,p in ipairs(GAPS) do
+                local node=at(self,layer.id,p[1],p[2],layer.width,48)
+                if index==layer.until_stage then self.effects[i]=node end
+            end
         end
-    end
-    if treatment.effect then
-        for i,p in ipairs(GAPS) do self.effects[i]=at(self,treatment.effect,p[1],p[2],treatment.id=="floss" and 28 or 22,48) end
     end
     if treatment.paste then
         for i,p in ipairs(PASTE) do self.pastes[i]=at(self,"treatment-fx-4",p[1],p[2],82,37); if treatment.paste=="apply" then alpha(self.pastes[i],0) end end
@@ -74,7 +74,7 @@ local function begin(self,index)
         for i,p in ipairs(TEETH) do self.bubbles[i]=at(self,"treatment-fx-5",p[1],p[2],90,73); if treatment.foam=="apply" then alpha(self.bubbles[i],0) end end
     end
     if treatment.mode=="collect" then
-        sprite(self,"petri",245,660,450)
+        self.dish=sprite(self,"petri",DISH.x,DISH.y,450)
         for i,p in ipairs(FOOD) do create_item(self,p,"food",i) end
         for i,p in ipairs(WORMS) do create_item(self,p,"worm",i) end
     end
@@ -95,6 +95,8 @@ function M.cancel(self)
     for _,item in ipairs(self.items) do item.hold=0 end
 end
 local function finish(self)
+    self.exit_x=self.pointer and self.pointer.x or 535
+    self.exit_y=self.pointer and self.pointer.y or 650
     self.transition=.9; self.pointer=nil; self.previous=nil; self.grip=nil
 end
 local function collection_progress(self)
@@ -106,11 +108,11 @@ function M.input(self,x,y,pressed,released)
     elseif self.pointer then self.pointer.x=x; self.pointer.y=y end
     if released then
         local item=self.grip
-        if item and item.freed and x>=0 and x<=490 and y>=570 and y<=750 then
+        if item and item.freed and math.abs(x-DISH.x)<=245 and math.abs(y-DISH.y)<=95 then
             item.done=true
             local dx,dy
-            if item.worm then dx=260+self.worm_count*42; dy=638; self.worm_count=self.worm_count+1
-            else dx=100+(self.food_count%4)*36; dy=637+math.floor(self.food_count/4)*24; self.food_count=self.food_count+1 end
+            if item.worm then dx=260+self.worm_count*42; dy=DISH.y-22; self.worm_count=self.worm_count+1
+            else dx=100+(self.food_count%4)*36; dy=DISH.y-23+math.floor(self.food_count/4)*24; self.food_count=self.food_count+1 end
             item.drop_x,item.drop_y=dx,dy
             -- Dish positions describe sprite centers, not the mouth's grip anchor.
             place(item.node,dx,dy); self.grip=nil
@@ -127,39 +129,50 @@ local function hit_segment(x,y,previous,target,radius)
     local t=math.max(0,math.min(1,((target[1]-previous[1])*dx+(target[2]-previous[2])*dy)/length))
     return distance(previous[1]+dx*t,previous[2]+dy*t,target[1],target[2])<radius
 end
+local function shown(self,index,cap)
+    local amount=self.work[index] or 0
+    if amount<1 then return amount*cap end
+    local t=math.min(1,(self.settle[index] or 0)/.32)
+    return cap+(1-cap)*t*t*(3-2*t)
+end
 local function render_progress(self)
     local treatment=self.treatment
-    for i,node in ipairs(self.tiles) do
-        local amount=self.work[i] or 0
-        -- Keep a visible stained/unpolished remainder until this tooth is done.
-        alpha(node,amount>=1 and 1 or amount*.7)
+    if treatment.reveal then
+        local progress={}; for i=1,#TEETH do progress[i]=shown(self,i,.7) end
+        portrait_composite.update(self.portrait,TEETH,progress)
     end
     -- Unfinished debris must remain legible, even after an almost-complete pass.
     -- Remove it only when that individual target is actually finished.
     if treatment.remove_effect then
         for i,node in ipairs(self.effects) do
-            alpha(node,self.work[i]>=1 and 0 or math.max(.65,1-self.work[i]*.35))
+            alpha(node,1-shown(self,i,.7))
         end
     end
-    if treatment.paste=="apply" then for i,node in ipairs(self.pastes) do alpha(node,self.work[i]) end end
+    if treatment.paste=="apply" then for i,node in ipairs(self.pastes) do alpha(node,shown(self,i,1)) end end
     if treatment.paste=="remove" then
         for i,node in ipairs(self.pastes) do
             local nearest=1
             for j,p in ipairs(TEETH) do if distance(p[1],p[2],PASTE[i][1],PASTE[i][2])<distance(TEETH[nearest][1],TEETH[nearest][2],PASTE[i][1],PASTE[i][2]) then nearest=j end end
-            alpha(node,self.work[nearest]>=1 and 0 or math.max(.6,1-self.work[nearest]))
+            alpha(node,1-shown(self,nearest,.4))
         end
     end
     for i,node in ipairs(self.bubbles) do
-        local amount=self.work[i]
-        local a=treatment.foam=="apply" and (amount>=1 and 1 or amount*.45)
-            or (amount>=1 and 0 or math.max(.6,1-amount))
+        local a=treatment.foam=="apply" and shown(self,i,.45) or 1-shown(self,i,.4)
         alpha(node,a); gui.set_scale(node,vmath.vector3(math.sqrt(a),math.sqrt(a),1))
     end
 end
 function M.update(self,dt)
     self.clock=self.clock+dt; self.arrival=self.arrival+dt
     if self.index>#M.sequence then return nil,true end
+    for i,amount in ipairs(self.work) do if amount>=1 then self.settle[i]=(self.settle[i] or 0)+dt end end
     if self.transition then
+        render_progress(self)
+        local t=math.min(1,(.9-self.transition)/.45)
+        alpha(self.tool,1-t)
+        place(self.tool,self.exit_x+180*t,self.exit_y+230*(.5-(self.treatment.tip or .035)))
+        if self.treatment.mode=='collect' then
+            alpha(self.dish,1-t); for _,item in ipairs(self.items) do alpha(item.node,1-t) end
+        end
         gui.set_enabled(self.gesture,false)
         self.transition=self.transition-dt
         if self.transition<=0 then local completed=self.index; begin(self,completed+1); return completed,completed==#M.sequence end
@@ -170,15 +183,23 @@ function M.update(self,dt)
         local x,y=portrait(pointer.x,pointer.y)
         if self.treatment.mode=="collect" then
             if not self.grip then
+                local nearest,best
                 for _,item in ipairs(self.items) do
-                    if not item.done and distance(x,y,item.x,item.y)<37 then
+                    -- Grab anywhere along a worm's visible body, with generous
+                    -- padding. Score candidates so nearby scraps cannot steal it.
+                    local cy=item.worm and math.max(item.y,math.min(item.y+62,y)) or item.y
+                    local score=distance(x,y,item.x,cy)/(item.worm and 62 or 37)
+                    if not item.done and score<1 and (not best or score<best) then nearest,best=item,score end
+                end
+                for _,item in ipairs(self.items) do
+                    if item==nearest then
                         item.hold=(item.hold or 0)+dt
-                        if item.hold>=.24 then self.grip=item; item.start_x=x; item.start_y=y; gui.move_above(item.node,nil); gui.move_above(self.tool,nil); break end
+                        if item.hold>=(item.worm and .08 or .24) then self.grip=item; item.start_x=x; item.start_y=y; gui.move_above(item.node,nil); gui.move_above(self.tool,nil) end
                     else item.hold=0 end
                 end
             else
                 local item=self.grip; local dx,dy=x-item.start_x,y-item.start_y
-                if distance(dx,dy,0,0)>(item.worm and 88 or 65) then item.freed=true end
+                if distance(dx,dy,0,0)>(item.worm and 40 or 65) then item.freed=true end
                 local sx,sy=screen(item.x+dx,item.y+dy+(item.worm and 27 or 0)); place(item.node,sx,sy)
             end
         else
@@ -209,6 +230,7 @@ function M.update(self,dt)
     end
     local tx,ty=535+math.max(0,1-self.arrival/.45)*240,650
     if self.pointer then tx,ty=self.pointer.x,self.pointer.y end
+    if self.transition then tx,ty=self.exit_x,self.exit_y end
     local tip=self.treatment.tip or .035
     place(self.tool,tx,ty+230*(.5-tip))
     gui.set_rotation(self.tool,vmath.vector3(0,0,self.pointer and math.sin(self.clock*(self.treatment.sway or 9))*3 or 7))
@@ -221,7 +243,7 @@ function M.update(self,dt)
         else
             for i,p in ipairs(targets(self.treatment)) do if self.work[i]<1 then target=p; break end end
         end
-        if target then local x,y=screen(target[1],target[2]); gesture.show(self.gesture,self.idle-1.2,x,y,self.treatment.mode,245,645) end
+        if target then local x,y=screen(target[1],target[2]); gesture.show(self.gesture,self.idle-1.2,x,y,self.treatment.mode,DISH.x,DISH.y-15) end
     else gui.set_enabled(self.gesture,false) end
 end
 return M

@@ -20,7 +20,7 @@ function Check-Game($name, $testArguments) {
 & "$PSScriptRoot/build-html5.ps1" -Toolchain $Toolchain -Fixture makeup -BundleOutput "$output/makeup" | Out-Null
 & "$PSScriptRoot/build-html5.ps1" -Toolchain $Toolchain -Fixture finish -BundleOutput "$output/finish" | Out-Null
 $bundle = '.scratch/html5/Runway Rewind'
-foreach($name in @('navigation','dental','dental-remaining','launch','extraction','lifecycle','persistence','presentation')) {
+foreach($name in @('navigation','dental','dental-remaining','dental-blending','launch','extraction','lifecycle','persistence','presentation')) {
     Check-Game $name @("game/tests/$name.cjs",$bundle)
 }
 Check-Game 'makeup' @('game/tests/makeup.cjs',"$output/makeup/Runway Rewind")

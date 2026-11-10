@@ -38,8 +38,8 @@ async function work(page,p,stroke,partial=false) {
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     page.on('console',m=>{if(/ERROR:/.test(m.text()))errors.push(m.text())});
     const url=`http://127.0.0.1:${server.address().port}/`;
-    await seed(page,url,4); const clean=await frame(page);
     for(const [n,name] of [[2,'drill'],[3,'floss']]) {
+      await seed(page,url,n+1); const clean=await frame(page);
       await seed(page,url,n); const untouched=await frame(page);
       // One quick contact is not enough, even though the hit area is forgiving.
       await page.mouse.move(...point(gaps[0]));await page.mouse.down();
@@ -53,7 +53,7 @@ async function work(page,p,stroke,partial=false) {
       await page.mouse.click(10,900,{delay:40});await wait(50);
       const partial=await frame(page);
       assert.equal(await boundary(page),n,`${name}: a partial final target still needs work`);
-      assert.ok(difference(partial,clean)>difference(untouched,clean)*.55,
+      assert.ok(difference(partial,clean)>difference(untouched,clean)*.25,
         `${name}: unfinished debris stays clearly visible against the clean plate`);
       await work(page,last,n===3);await wait(1100);
       assert.equal(await boundary(page),n+1,`${name}: finishing the final target advances`);

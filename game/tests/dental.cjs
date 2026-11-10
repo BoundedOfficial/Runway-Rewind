@@ -33,14 +33,14 @@ async function enamel(page){const im=PNG.sync.read(await page.locator('canvas').
     await page.mouse.move(...point(items[0]));await page.mouse.down();await wait(320);await page.mouse.move(...point([155,280]));await wait(80);await page.mouse.up();
     for(const [i,p] of items.entries()){
      if(i===0){
-      const cdp=await page.context().newCDPSession(page);const [x,y]=point(p);
-      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});await wait(340);
-      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y-135}]});await wait(80);
-      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:245,y:660}]});await wait(80);
+      const cdp=await page.context().newCDPSession(page);const [x,y]=point([p[0]+30,p[1]+50]);
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});await wait(140);
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y-65}]});await wait(80);
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:245,y:795}]});await wait(80);
       await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await wait(80);
       await tapStage(page,570,910);await wait(80);await tapStage(page,220,550);await wait(80);continue;
      }
-     await page.mouse.move(...point(p));await page.mouse.down();await wait(320);await page.mouse.move(...point([p[0],p[1]-105]),{steps:5});await wait(80);await page.mouse.move(245,660,{steps:10});await wait(70);await page.mouse.up();await wait(30)}
+     await page.mouse.move(...point(p));await page.mouse.down();await wait(320);await page.mouse.move(...point([p[0],p[1]-105]),{steps:5});await wait(80);await page.mouse.move(245,795,{steps:10});await wait(70);await page.mouse.up();await wait(30)}
    }else{
     const points=stage===3||stage===4?gaps:stage===5?paste:teeth;
     let treated=0;

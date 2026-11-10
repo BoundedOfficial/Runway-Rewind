@@ -2,6 +2,8 @@
 
 Follow-up user revisions preserve tool aspect ratios, dish fit, gesture-only treatment guidance, and removal of yellow food. The subsequent pacing correction removes aggregate auto-completion: every dental target requires sustained work, and unfinished debris stays visible until removed. Larger interaction areas remain; Level 1's original coverage and hair travel requirements are restored. The regression test `dental-remaining.cjs` covers a fast sweep, 13 of 14 cleared targets, a partially worked final target's visibility, and completion only after that target is finished. The original release verification below describes the pre-revision artifact.
 
+Layering revision: the dish moves below the mouth, worms use a generous body-shaped grab area with shorter hold/pull requirements, and unfinished scraps can fade to 30% opacity. Full registered plates now blend through one normalized compositor, sharing the surrounding face; independently feathered tooth tiles are removed. Deposits/fibers persist across the stages preceding their removal, and completed reveals/effects ease to their endpoints over 0.32 seconds. The original scraping handoff changed 59,643 mouth pixels. `dental-blending.cjs` now observes actual rendered frames at public checkpoint writes: all eight handoffs produced zero pixels exceeding its six-channel-sum rounding tolerance. The full dental checkpoint/replay run and remaining-debris regression passed. Phone-sized screenshots confirmed dish placement and partial blending, and touch collection exercises a worm body pickup outside the old grab circle.
+
 Specification: [issue #15](https://github.com/BoundedOfficial/Runway-Rewind/issues/15).
 Comparison point approved by the user: `627db4cc1fa2e8bbddf753208a6eb664b15d213b`.
 
