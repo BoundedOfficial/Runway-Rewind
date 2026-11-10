@@ -89,7 +89,6 @@ function M.destroy(self) if self and self.root then gui.delete_node(self.root); 
 function M.cancel(self)
     if self.grip then local item=self.grip; item.freed=false; local x,y=screen(item.x,item.y+27); place(item.node,x,y) end
     self.grip=nil; self.pointer=nil; self.previous=nil
-    for _,item in ipairs(self.items) do item.hold=0 end
 end
 local function finish(self)
     self.exit_x=self.tool_x
@@ -99,10 +98,36 @@ end
 local function collection_progress(self)
     local n=0; for _,item in ipairs(self.items) do if item.done then n=n+1 end end; return n
 end
+local function grab_worm(self,x,y)
+    local px,py=portrait(x,y)
+    local nearest,best
+    for _,item in ipairs(self.items) do
+        local cy=math.max(item.y,math.min(item.y+62,py))
+        local score=distance(px,py,item.x,cy)/22
+        if not item.done and score<1 and (not best or score<best) then nearest,best=item,score end
+    end
+    if nearest then
+        -- Capture once on press, preserving the exact point on the body.
+        -- Movement outside the hit area cannot lose or switch this grip.
+        self.grip=nearest; nearest.start_x=px; nearest.start_y=py
+        gui.move_above(nearest.node,nil); gui.move_above(self.tool,nil)
+    end
+end
+local function drag_worm(self,x,y)
+    if not self.grip then return end
+    local px,py=portrait(x,y)
+    local item=self.grip; local dx,dy=px-item.start_x,py-item.start_y
+    if distance(dx,dy,0,0)>40 then item.freed=true end
+    local sx,sy=screen(item.x+dx,item.y+dy+27); place(item.node,sx,sy)
+end
 function M.input(self,x,y,pressed,released)
     if self.index>#M.sequence or self.transition or self.arrival<.45 then return end
-    if pressed then self.pointer={x=x,y=y}; self.previous=nil; self.idle=0; self.initial_hint=false; gui.set_enabled(self.gesture,false)
+    if pressed then
+        self.pointer={x=x,y=y}; self.previous=nil; self.idle=0; self.initial_hint=false; gui.set_enabled(self.gesture,false)
+        if self.treatment.mode=="collect" then grab_worm(self,x,y) end
     elseif self.pointer then self.pointer.x=x; self.pointer.y=y end
+    -- Apply the final input position even if press/move/release share a frame.
+    if self.pointer and self.treatment.mode=="collect" then drag_worm(self,x,y) end
     if released then
         local item=self.grip
         if item and item.freed and math.abs(x-DISH.x)<=DISH.drop_half_width and math.abs(y-DISH.y)<=DISH.drop_half_height then
@@ -180,25 +205,7 @@ function M.update(self,dt)
     if pointer then
         local x,y=portrait(pointer.x,pointer.y)
         if self.treatment.mode=="collect" then
-            if not self.grip then
-                local nearest,best
-                for _,item in ipairs(self.items) do
-                    -- Follow the whole body with a narrow capsule, not a wide halo.
-                    local cy=math.max(item.y,math.min(item.y+62,y))
-                    local score=distance(x,y,item.x,cy)/22
-                    if not item.done and score<1 and (not best or score<best) then nearest,best=item,score end
-                end
-                for _,item in ipairs(self.items) do
-                    if item==nearest then
-                        item.hold=(item.hold or 0)+dt
-                        if item.hold>=.08 then self.grip=item; item.start_x=x; item.start_y=y; gui.move_above(item.node,nil); gui.move_above(self.tool,nil) end
-                    else item.hold=0 end
-                end
-            else
-                local item=self.grip; local dx,dy=x-item.start_x,y-item.start_y
-                if distance(dx,dy,0,0)>40 then item.freed=true end
-                local sx,sy=screen(item.x+dx,item.y+dy+27); place(item.node,sx,sy)
-            end
+            drag_worm(self,pointer.x,pointer.y)
         else
             local speed=self.previous and distance(x,y,self.previous[1],self.previous[2]) or 0
             local hold=self.treatment.mode=="hold"
@@ -233,7 +240,8 @@ function M.update(self,dt)
         self.previous={x,y}
     end
     for _,item in ipairs(self.items) do
-        gui.play_flipbook(item.node,"worms-"..(1+math.floor(self.clock*7+item.id*1.7)%6))
+        -- A held worm keeps its current pose so its grip cannot visibly jitter.
+        if item~=self.grip then gui.play_flipbook(item.node,"worms-"..(1+math.floor(self.clock*7+item.id*1.7)%6)) end
     end
     local tx,ty=535,650
     if self.arrival<.45 then
