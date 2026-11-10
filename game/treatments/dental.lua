@@ -8,10 +8,9 @@ local CAMERA = { x = -70.4, y = -97.9, scale = 1.22 }
 local TEETH = {{80,381},{128,380},{193,388},{275,390},{378,390},{459,384},{521,377},{563,380},{93,482},{156,507},{225,521},{293,526},{359,526},{424,520},{484,506},{539,480}}
 local GAPS = {{101,396},{158,405},{223,422},{326,430},{426,417},{491,400},{548,395},{126,504},{193,532},{259,544},{326,548},{392,540},{457,528},{516,505}}
 local PASTE = {{135,392},{278,402},{410,400},{506,390},{178,520},{310,533},{442,520}}
-local FOOD = {{80,400,1},{395,365,3},{565,400,4},{100,500,1},{175,530,3},{425,530,1},{550,515,4}}
-local WORMS = {{155,394},{326,412},{487,407},{260,537}}
+local WORMS = {{155,394},{326,412},{487,407},{260,537},{80,396},{565,400},{130,500},{425,530}}
 M.sequence = {
-    {id="collect", label="Clear the leftovers", tool=1, mode="collect", plate="dirty"},
+    {id="collect", label="Remove the worms", tool=1, mode="collect", plate="dirty"},
     {id="scale", label="Crack the crust", tool=2, mode="stroke", plate="dirty", reveal="descaled", effect="treatment-fx-2", travel=125},
     {id="drill", label="Clean the tight spots", tool=3, mode="hold", plate="descaled", effect="treatment-fx-2", remove_effect=true, targets=GAPS, radius=24, duration=.85},
     {id="floss", label="Floss the gaps", tool=4, mode="stroke", plate="descaled", effect="treatment-fx-3", remove_effect=true, targets=GAPS, radius=30, travel=125, tip=.08},
@@ -41,18 +40,16 @@ local function at(self,id,x,y,w,h)
     return sprite(self,id,sx,sy,w*CAMERA.scale,h and h*CAMERA.scale)
 end
 local function targets(treatment) return treatment.targets or TEETH end
-local function create_item(self,p,kind,index)
-    local worm=kind=="worm"
-    local node=at(self,worm and "worms-1" or "food-"..p[3],p[1],p[2]+(worm and 27 or 0),worm and 80 or ({36,27,43,33})[p[3]],worm and 80 or nil)
-    if not worm then gui.set_rotation(node,vmath.vector3(0,0,-({-.3,.2,1.15,.95})[p[3]]*180/math.pi)) end
-    self.items[#self.items+1]={x=p[1],y=p[2],node=node,worm=worm,id=index}
+local function create_worm(self,p,index)
+    local node=at(self,"worms-1",p[1],p[2]+27,80,80)
+    self.items[#self.items+1]={x=p[1],y=p[2],node=node,id=index}
 end
 local function begin(self,index)
     if self.root then gui.delete_node(self.root) end
     self.root=gui.new_box_node(vmath.vector3(),vmath.vector3())
     self.index=index; self.work={}; self.settle={}; self.settle_from={}; self.contact={}; self.travel={}; self.items={}; self.effects={}; self.pastes={}; self.bubbles={}
     self.pointer=nil; self.grip=nil; self.tool_x=850; self.tool_y=650; self.tool_angle=7; self.arrival=0; self.transition=nil; self.idle=0
-    self.food_count=0; self.worm_count=0
+    self.worm_count=0
     self.treatment=M.sequence[index]
     local treatment=self.treatment or {plate="polished"}
     local plate=treatment.plate
@@ -75,8 +72,7 @@ local function begin(self,index)
     end
     if treatment.mode=="collect" then
         self.dish=sprite(self,"petri",DISH.x,DISH.y,450)
-        for i,p in ipairs(FOOD) do create_item(self,p,"food",i) end
-        for i,p in ipairs(WORMS) do create_item(self,p,"worm",i) end
+        for i,p in ipairs(WORMS) do create_worm(self,p,i) end
     end
     if index<=#M.sequence then
         self.tool=sprite(self,"tools-"..M.sequence[index].tool,self.tool_x,self.tool_y+230*(.5-(treatment.tip or .035)),nil,230)
@@ -86,12 +82,12 @@ local function begin(self,index)
     else self.tool=nil end
 end
 function M.start(boundary)
-    local self={clock=0,food_count=0,worm_count=0}
+    local self={clock=0,worm_count=0}
     begin(self,boundary+1); return self
 end
 function M.destroy(self) if self and self.root then gui.delete_node(self.root); self.root=nil end end
 function M.cancel(self)
-    if self.grip then local item=self.grip; item.freed=false; local x,y=screen(item.x,item.y+(item.worm and 27 or 0)); place(item.node,x,y) end
+    if self.grip then local item=self.grip; item.freed=false; local x,y=screen(item.x,item.y+27); place(item.node,x,y) end
     self.grip=nil; self.pointer=nil; self.previous=nil
     for _,item in ipairs(self.items) do item.hold=0 end
 end
@@ -111,9 +107,8 @@ function M.input(self,x,y,pressed,released)
         local item=self.grip
         if item and item.freed and math.abs(x-DISH.x)<=245 and math.abs(y-DISH.y)<=95 then
             item.done=true
-            local dx,dy
-            if item.worm then dx=260+self.worm_count*42; dy=DISH.y-22; self.worm_count=self.worm_count+1
-            else dx=100+(self.food_count%4)*36; dy=DISH.y-23+math.floor(self.food_count/4)*24; self.food_count=self.food_count+1 end
+            local dx,dy=DISH.x-147+self.worm_count*42,DISH.y-5
+            self.worm_count=self.worm_count+1
             item.drop_x,item.drop_y=dx,dy
             -- Dish positions describe sprite centers, not the mouth's grip anchor.
             place(item.node,dx,dy); self.grip=nil
@@ -189,20 +184,20 @@ function M.update(self,dt)
                 local nearest,best
                 for _,item in ipairs(self.items) do
                     -- Follow the whole body with a narrow capsule, not a wide halo.
-                    local cy=item.worm and math.max(item.y,math.min(item.y+62,y)) or item.y
-                    local score=distance(x,y,item.x,cy)/(item.worm and 22 or 37)
+                    local cy=math.max(item.y,math.min(item.y+62,y))
+                    local score=distance(x,y,item.x,cy)/22
                     if not item.done and score<1 and (not best or score<best) then nearest,best=item,score end
                 end
                 for _,item in ipairs(self.items) do
                     if item==nearest then
                         item.hold=(item.hold or 0)+dt
-                        if item.hold>=(item.worm and .08 or .24) then self.grip=item; item.start_x=x; item.start_y=y; gui.move_above(item.node,nil); gui.move_above(self.tool,nil) end
+                        if item.hold>=.08 then self.grip=item; item.start_x=x; item.start_y=y; gui.move_above(item.node,nil); gui.move_above(self.tool,nil) end
                     else item.hold=0 end
                 end
             else
                 local item=self.grip; local dx,dy=x-item.start_x,y-item.start_y
-                if distance(dx,dy,0,0)>(item.worm and 40 or 65) then item.freed=true end
-                local sx,sy=screen(item.x+dx,item.y+dy+(item.worm and 27 or 0)); place(item.node,sx,sy)
+                if distance(dx,dy,0,0)>40 then item.freed=true end
+                local sx,sy=screen(item.x+dx,item.y+dy+27); place(item.node,sx,sy)
             end
         else
             local speed=self.previous and distance(x,y,self.previous[1],self.previous[2]) or 0
@@ -238,7 +233,7 @@ function M.update(self,dt)
         self.previous={x,y}
     end
     for _,item in ipairs(self.items) do
-        if item.worm then gui.play_flipbook(item.node,"worms-"..(1+math.floor(self.clock*7+item.id*1.7)%6)) end
+        gui.play_flipbook(item.node,"worms-"..(1+math.floor(self.clock*7+item.id*1.7)%6))
     end
     local tx,ty=535,650
     if self.arrival<.45 then

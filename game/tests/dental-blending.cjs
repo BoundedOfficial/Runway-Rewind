@@ -8,7 +8,7 @@ const {enterLevel}=require('./entry.cjs');
 const teeth=[[80,381],[128,380],[193,388],[275,390],[378,390],[459,384],[521,377],[563,380],[93,482],[156,507],[225,521],[293,526],[359,526],[424,520],[484,506],[539,480]];
 const gaps=[[101,396],[158,405],[223,422],[326,430],[426,417],[491,400],[548,395],[126,504],[193,532],[259,544],[326,548],[392,540],[457,528],[516,505]];
 const paste=[[135,392],[278,402],[410,400],[506,390],[178,520],[310,533],[442,520]];
-const items=[[155,394],[80,400],[326,412],[395,365],[565,400],[100,500],[175,530],[425,530],[550,515],[487,407],[260,537]];
+const items=[[155,394],[326,412],[487,407],[260,537],[80,396],[565,400],[130,500],[425,530]];
 const point=([x,y])=>[-70.4+x*1.22,-97.9+y*1.22];
 (async()=>{
  const server=preview(process.argv[2]||'.scratch/html5/Runway Rewind');await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -44,7 +44,12 @@ const point=([x,y])=>[-70.4+x*1.22,-97.9+y*1.22];
    if(process.argv[3]&&name!==process.argv[3])continue;
    await p.goto(url);await p.evaluate(n=>localStorage.setItem('runway-rewind.level-2',JSON.stringify({version:1,level:'level-2',completedTreatments:n,completed:false})),boundary);
    await p.reload();await enterLevel(p,2);await p.evaluate(()=>window.blendWatch=true);
+   if(stroke==='collect'&&process.env.STAGE_EVIDENCE_DIR){fs.mkdirSync(process.env.STAGE_EVIDENCE_DIR,{recursive:true});await p.screenshot({path:path.join(process.env.STAGE_EVIDENCE_DIR,'worms-start.png')});}
    for(const q of points){
+    if(stroke==='collect'&&q===points.at(-1)){
+     assert.equal(await p.evaluate(()=>window.blendResults.length),0,'Every worm must be collected before leaving the opening stage');
+     if(process.env.STAGE_EVIDENCE_DIR)await p.screenshot({path:path.join(process.env.STAGE_EVIDENCE_DIR,'worms-dish.png')});
+    }
     if(await p.evaluate(()=>window.blendResults.length))break;
     await p.mouse.move(...point(q));await p.mouse.down();
     if(stroke==='collect'){await wait(650);await p.mouse.move(...point([q[0],q[1]-110]),{steps:5});await p.mouse.move(245,795,{steps:8});await wait(80);}

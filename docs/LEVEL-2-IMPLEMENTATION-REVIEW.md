@@ -35,3 +35,5 @@ Current tuning: worm pickup is narrowed to a 22-unit capsule radius along the fu
 
 Validation of current tuning: `dental-motion.cjs` and `dental-forgiving.cjs` pass. Toothpaste completes after six full spots plus partial final coverage; polish succeeds with contact 60 portrait units outside tooth centers. Sampled enamel blue-channel lift averages 67.5/255. Both changed handoffs (paste and polish) report zero changed mouth pixels above the established comparison tolerance.
 The full eight-treatment run, each checkpoint reload, replay, and exit cancellation also pass after this tuning; the release package builds successfully.
+
+Opening collection is now worms-only: all seven loose food sprites are removed, and the worm count increases from four to eight. Worms fill one centered row in the petri dish at their original scale. The focused built-game collection test collects all eight and reports zero changed mouth pixels at the scraping handoff; opening and nearly full-dish screenshots were inspected. Deposits between teeth remain for the later cleaning tools.
