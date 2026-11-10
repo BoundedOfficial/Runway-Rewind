@@ -131,7 +131,7 @@ async function checkFinish(browser, url, input, release) {
     assert.ok(count(finished, [405, 874, 515, 901], pale) > 1500, 'Next appears beside Replay');
 
     await milestone(13);
-    await release?.onFinished(finished);
+    await release?.onFinished?.(finished);
 
     if(input==='mouse') {
       await tap(460,888); await wait(900);
