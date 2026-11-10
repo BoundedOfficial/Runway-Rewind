@@ -25,4 +25,4 @@ The full browser suite was run, followed by focused reruns of failures. Test fix
 
 Release tested from `e90d88ab516a0ee9231275f93cf6a9868e14cb82`, ZIP SHA-256 `258F1DD272046371C3BCD8E3A5F75AF943366AA85B736346E8C50AACE2600EAD`. The later documentation commit does not change the artifact.
 
-Environment: Windows, Chrome 156.0.8078.81, Defold 1.14.0. Touch and platform SDKs are simulated; physical-device and live-platform certification remain outside this local verification. Evidence is under `.scratch/level2/full-suite/evidence/`; release reports are `acceptance-mouse.json` and `acceptance-touch-presentation.json`.
+Environment: Windows, Chrome 156.0.8078.81, Defold 1.14.0. Touch and platform SDKs are simulated; physical-device and live-platform certification remain outside this local verification. Evidence is under `.scratch/level2/full-suite/evidence/`; focused reruns are recorded in `.scratch/level2/full-suite/reruns.json`. The original failed full-suite report is retained as an audit trail.
