@@ -35,19 +35,48 @@ foreach($name in @('dirty','descaled','clean','polished')) {
     $original=[Drawing.Bitmap]::new((Join-Path $source "$name.png"))
     $plate=Resize-Image $original 640 960
     Save-Sprite $plate "dental-$name"
-    if($name -ne 'dirty') {
-        for($i=0;$i -lt 16;$i++) {
-            $x=40+($i%8)*70; $y=300+[Math]::Floor($i/8)*140
-            $tile=$plate.Clone([Drawing.Rectangle]::new($x,$y,70,140),[Drawing.Imaging.PixelFormat]::Format32bppArgb)
-            Save-Sprite $tile "$name-$($i+1)"; $tile.Dispose()
-        }
-    }
     if($name -eq 'dirty') {
         $crop=$plate.Clone([Drawing.Rectangle]::new(0,200,640,640),[Drawing.Imaging.PixelFormat]::Format32bppArgb)
         $thumb=Resize-Image $crop 220 220; Save-Sprite $thumb 'thumbnail-2'; $thumb.Dispose(); $crop.Dispose()
     }
     $plate.Dispose(); $original.Dispose()
 }
+
+# Enamel is the registered difference between stained and ivory plates. Partition
+# that authored mask around the actual tooth centers, never a rectangular grid.
+$yellow=[Drawing.Bitmap]::new((Join-Path $output 'dental-descaled.png'))
+$ivory=[Drawing.Bitmap]::new((Join-Path $output 'dental-clean.png'))
+$centers=@(@(80,381),@(128,380),@(193,388),@(275,390),@(378,390),@(459,384),@(521,377),@(563,380),@(93,482),@(156,507),@(225,521),@(293,526),@(359,526),@(424,520),@(484,506),@(539,480))
+$owners=[int[]]::new(640*960)
+$regions=@($centers | ForEach-Object { @{x=640;y=960;right=0;bottom=0} })
+for($y=300;$y -lt 580;$y++) { for($x=40;$x -lt 600;$x++) {
+    $cleanPixel=$ivory.GetPixel($x,$y); $yellowPixel=$yellow.GetPixel($x,$y)
+    if(($cleanPixel.B-$yellowPixel.B) -le 18 -or ($cleanPixel.G-$yellowPixel.G) -le 5) { continue }
+    $nearest=0; $best=[double]::MaxValue
+    for($i=0;$i -lt 16;$i++) { $dx=$x-$centers[$i][0]; $dy=$y-$centers[$i][1]; $distance=$dx*$dx+$dy*$dy; if($distance -lt $best) { $best=$distance; $nearest=$i } }
+    $owners[$y*640+$x]=$nearest+1
+    $r=$regions[$nearest]; $r.x=[Math]::Min($r.x,$x); $r.y=[Math]::Min($r.y,$y); $r.right=[Math]::Max($r.right,$x); $r.bottom=[Math]::Max($r.bottom,$y)
+}}
+$yellow.Dispose(); $ivory.Dispose()
+foreach($r in $regions) { $r.width=$r.right-$r.x+1; $r.height=$r.bottom-$r.y+1; $r.Remove('right'); $r.Remove('bottom') }
+foreach($name in @('descaled','clean','polished')) {
+    $plate=[Drawing.Bitmap]::new((Join-Path $output "dental-$name.png"))
+    for($i=0;$i -lt 16;$i++) {
+        $r=$regions[$i]; $tile=$plate.Clone([Drawing.Rectangle]::new($r.x,$r.y,$r.width,$r.height),[Drawing.Imaging.PixelFormat]::Format32bppArgb)
+        for($y=0;$y -lt $r.height;$y++) { for($x=0;$x -lt $r.width;$x++) {
+            $index=($r.y+$y)*640+$r.x+$x
+            $opacity=0
+            if($owners[$index] -eq $i+1) {
+                $opacity=255
+                if($owners[$index-1] -ne $i+1 -or $owners[$index+1] -ne $i+1 -or $owners[$index-640] -ne $i+1 -or $owners[$index+640] -ne $i+1) { $opacity=180 }
+            }
+            $color=$tile.GetPixel($x,$y); $tile.SetPixel($x,$y,[Drawing.Color]::FromArgb($opacity,$color.R,$color.G,$color.B))
+        }}
+        Save-Sprite $tile "$name-$($i+1)"; $tile.Dispose()
+    }
+    $plate.Dispose()
+}
+$regions | ConvertTo-Json -Compress | Set-Content (Join-Path $output 'regions.json') -Encoding utf8NoBOM
 $original=[Drawing.Bitmap]::new((Join-Path $Project 'artwork/level-1/assets/plates/00-dirty.png'))
 $plate=Resize-Image $original 640 960
 $crop=$plate.Clone([Drawing.Rectangle]::new(0,80,640,640),[Drawing.Imaging.PixelFormat]::Format32bppArgb)

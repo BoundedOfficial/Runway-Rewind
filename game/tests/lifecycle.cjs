@@ -170,6 +170,8 @@ async function checkHeldStroke(browser, url, touch, development) {
     await move(127, 478);
     await move(216, 478);
     await move(62, 478);
+    // Let authored reveal settling finish before asserting pause preserves pixels.
+    await wait(360);
     const partial = await frame(page, leftCheek);
     assert.ok(!sameOutsideGuide(leftWithHeldGuide, partial, leftBefore, leftWithHeldGuide),
       'A held stroke applies visible cream to the left cheek');

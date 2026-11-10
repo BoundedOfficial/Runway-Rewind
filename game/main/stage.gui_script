@@ -44,9 +44,10 @@ local function hide_hud(self)
 end
 local function show(self,screen)
     self.screen=screen; self.pressed=nil
+    msg.post('@render:', 'portrait_visibility', {visible=self.level~=nil and self.level.renderer=='portrait' and screen~='home' and screen~='selection' and screen~='loading'})
     gui.set_enabled(self.menu_root,screen=='home' or screen=='selection' or screen=='loading')
     gui.set_enabled(self.home,screen=='home'); gui.set_enabled(self.selection,screen=='selection'); gui.set_enabled(self.loading,screen=='loading')
-    gui.set_enabled(self.result,screen=='result'); gui.set_enabled(self.next,screen=='result' and self.level_index==1)
+    gui.set_enabled(self.result,screen=='result'); gui.set_enabled(self.next,screen=='result' and levels[(self.level_index or 0)+1]~=nil)
     gui.set_enabled(self.confirm,screen=='confirm')
     gui.set_enabled(self.menu,screen==nil and (self.runner~=nil or self.dental~=nil))
     gui.move_above(self.menu_root,nil); gui.move_above(self.result,nil); gui.move_above(self.menu,nil); gui.move_above(self.confirm,nil)
@@ -159,7 +160,7 @@ local function pick(self,x,y)
         if gui.pick_node(self.leave,x,y) then return self.leave end
     elseif self.screen=='result' then
         for _,node in ipairs({self.replay,self.result_levels}) do if gui.pick_node(node,x,y) then return node end end
-        if self.level_index==1 and gui.pick_node(self.next,x,y) then return self.next end
+        if levels[self.level_index+1] and gui.pick_node(self.next,x,y) then return self.next end
     elseif not self.screen and gui.pick_node(self.menu,x,y) then return self.menu end
 end
 function on_input(self,id,action)
@@ -173,11 +174,11 @@ function on_input(self,id,action)
         if not activated then return true end
         if picked==self.play or picked==self.leave or picked==self.result_levels then clear_run(self); show(self,'selection')
         elseif picked==self.back then show(self,'home')
-        elseif picked==self.cards[1] then enter(self,1)
-        elseif picked==self.cards[2] or picked==self.next then enter(self,2)
+        elseif picked==self.next then enter(self,self.level_index+1)
         elseif picked==self.replay then enter(self,self.level_index,true)
         elseif picked==self.menu then cancel_input(self); show(self,'confirm')
-        elseif picked==self.cancel then show(self,nil) end
+        elseif picked==self.cancel then show(self,nil)
+        else for i,card in ipairs(self.cards) do if picked==card then enter(self,i); break end end end
         return true
     end
     if not self.screen then
