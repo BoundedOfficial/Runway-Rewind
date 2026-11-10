@@ -148,7 +148,11 @@ async function open(browser, url, target, host, check, pageOptions = {}) {
       contentType: 'application/javascript',
       body: `(${hostSdk.toString()})(${JSON.stringify(target)});`,
     });
-    if (address.startsWith(url)) return route.continue();
+    // Keep the simulated remote origin consistent when serving loopback files;
+    // Chromium otherwise treats the injected wrapper as a public-to-local request.
+    if (address.startsWith(url)) return route.fulfill({
+      response: await route.fetch({url: address.replace('runway.test', '127.0.0.1')}),
+    });
     return route.abort();
   });
   try {
@@ -197,6 +201,9 @@ async function open(browser, url, target, host, check, pageOptions = {}) {
       sampledReadyJsHeapBytes: heap.usedSize,
       requests: [...new Set(requests)].map(address => address.startsWith(url) ? address.slice(url.length) || '/' : address),
     };
+  } catch (error) {
+    console.error({target, errors, warnings, requests, state: await page.evaluate(() => ({platform:window.bridge?.platform?.id, events:window.hostEvents}))});
+    throw error;
   } finally {
     await page.close();
   }
@@ -229,6 +236,7 @@ async function checkLifecycle(page, target, observations) {
   await page.mouse.down();
   await wait(65);
   await lifecycle('blur');
+  const held = await snapshot(page);
   const rendered = await renderCount();
   const requests = observations.reads;
   if (target === 'youtube') await page.evaluate(() => window.dispatchEvent(new Event('focus')));
@@ -236,7 +244,7 @@ async function checkLifecycle(page, target, observations) {
   await wait(350);
   assert.equal(await renderCount(), rendered, 'Host pause suspends WebGL drawing');
   assert.equal(observations.reads, requests, 'Host pause starts no storage requests');
-  assert.ok((await snapshot(page)).equals(before), 'Pause preserves the portrait while the tool is held');
+  assert.ok((await snapshot(page)).equals(held), 'Pause preserves the portrait while the tool is held');
   await lifecycle('focus');
   await page.mouse.move(231, 257);
   await wait(120);
