@@ -62,7 +62,10 @@ function region(image, x, y, width, height) {
 }
 
 function assertRestoredStage(expected, actual, message) {
-  assert.ok(region(expected, 0, 0, 640, 861).equals(region(actual, 0, 0, 640, 861)), message);
+  const expectedStage = region(expected, 0, 0, 640, 861);
+  const actualStage = region(actual, 0, 0, 640, 861);
+  // Reloaded GPU targets can differ by one channel value, as in persistence.cjs.
+  assert.ok(actualStage.every((value, index) => Math.abs(value - expectedStage[index]) <= 1), message);
   // Font antialiasing can round the action text differently after the page reload.
   for (let i = 861 * 640 * 4; i < expected.data.length; i += 4) {
     const delta = Math.abs(expected.data[i] - actual.data[i]) +
